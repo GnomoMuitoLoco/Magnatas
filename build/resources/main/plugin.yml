@@ -1,0 +1,126 @@
+name: Magnatas
+version: '1.7'
+main: br.com.magnatasoriginal.magnatas.Magnatas
+api-version: '1.21'
+authors: [ GnomoMuitoLouco ]
+description: Magnatas Original
+website: https://www.servidormagnatas.com.br
+
+commands:
+  # Sistema de mensagens
+  magnatas:
+    description: Comando principal do plugin Magnatas
+    usage: /magnatas [info|ajuda|reload]
+
+  # 🏠 Sistema de Homes
+  sethome:
+    description: Define uma home
+  home:
+    description: Teleporta para uma home
+  homes:
+    description: Lista suas homes
+  delhome:
+    description: Remove uma home
+
+  # 🏪 Sistema de Lojas
+  lojas:
+    description: Mostra todas as lojas dos jogadores
+  setloja:
+    description: Marca a loja do jogador
+  delloja:
+    description: Deleta a loja do jogador
+  tploja:
+    description: Teleporta para a loja de um jogador
+
+  # 💰 Sistema de Tokens - Jogador
+  token:
+    description: Comando principal de Tokens
+    usage: /token <receber|info|loja|top>
+    default: true
+    permission: magnatas.token
+
+  # 💰 Sistema de Tokens - Admin
+  addtoken:
+    description: Adiciona Tokens a um jogador
+    usage: /addtoken <nick> <quantidade>
+    default: op
+    permission: magnatas.admin.token.add
+
+  removetoken:
+    description: Remove Tokens de um jogador
+    usage: /removetoken <nick> <quantidade>
+    default: op
+    permission: magnatas.admin.token.remove
+
+  settoken:
+    description: Define a quantidade exata de Tokens de um jogador
+    usage: /settoken <nick> <quantidade>
+    default: op
+    permission: magnatas.admin.token.set
+
+  vertoken:
+    description: Ver os Tokens de outro jogador
+    usage: /vertoken <nick>
+    default: op
+    permission: magnatas.admin.token.ver
+
+permissions:
+  # 🏠 Permissões de Homes
+  magnatas.homes.1:
+    description: Permissão para ter 1 home
+    default: true
+
+  magnatas.homes.*:
+    description: Permissão para ter homes infinitas
+    default: op
+
+  # 🏪 Permissões de Lojas
+  magnatas.setloja:
+    description: Permissão para definir uma loja
+    default: true
+
+  magnatas.delloja.others:
+    description: Permissão para deletar a loja de outros jogadores
+    default: op
+
+  magnatas.admin:
+    description: Permissão para administrar lojas
+    default: op
+
+  # 🧭 Permissões especiais
+  magnatas.vip:
+    description: Permissão para ignorar a espera de 5 segundos para teleportar
+    default: op
+
+  # 💰 Permissões de Tokens - Jogador
+  magnatas.token:
+    description: Permissão para usar comandos de Tokens
+    default: true
+
+  # 💰 Permissões de Tokens - Admin e VIP
+  magnatas.vip.token:
+    description: Permissão para receber 2 Tokens diários
+    default: op
+
+  magnatas.admin.token.add:
+    description: Permissão para adicionar Tokens
+    default: op
+
+  magnatas.admin.token.remove:
+    description: Permissão para remover Tokens
+    default: op
+
+  magnatas.admin.token.set:
+    description: Permissão para definir Tokens
+    default: op
+
+  magnatas.admin.token.ver:
+    description: Permissão para ver Tokens de outros jogadores
+    default: op
+  # Permissões de Mensagens - Ajudante
+  magnatas.staff.ajuda:
+    description: Permissão para receber mensagens automáticas de ajuda
+    default: op
+  magnatas.reload:
+    description: Permissão para recarregar o plugin
+    default: op
