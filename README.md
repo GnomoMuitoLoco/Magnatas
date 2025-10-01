@@ -1,0 +1,2 @@
+# Magnatas
+Plugin Magnatas Original.
