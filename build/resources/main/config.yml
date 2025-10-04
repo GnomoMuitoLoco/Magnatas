@@ -1,15 +1,1 @@
-messages:
-  loja_setada: "&aSua loja foi marcada e adicionada ao menu de /lojas!"
-  loja_existe: "&cVocê já possui uma loja. Por favor, delete sua loja existente antes de criar uma nova."
-  loja_removida: "&aSua loja foi removida do menu de /lojas!"
-  teleporte_iniciado: "&eAguarde 5 segundos sem se mover para ser teleportado para a loja de %1."
-  tempo_restante: "&eTempo restante: %1 segundos."
-  teleporte_cancelado: "&cTeleporte cancelado porque você se moveu."
-  teleporte_ja_em_progresso: "&cVocê já está sendo teleportado para a loja de %1."
-  teleporte_sucesso: "&aVocê foi teleportado para a loja de %1!"
-  loja_nao_encontrada: "&cNão foi possível encontrar a loja do jogador %1."
-  confirmacao_remocao: "&eConfirme a remoção da loja de %1 digitando o comando /delloja %1."
-  broadcast_loja_criada: "&eA loja de %1 foi inaugurada!"
-  broadcast_loja_removida: "&eA loja de %1 fechou as portas!"
-
-  ajuda_convite_intervalo: 300 # tempo em segundos entre cada mensagem automática
+ajuda_convite_intervalo: 300 # tempo em segundos entre cada mensagem automática

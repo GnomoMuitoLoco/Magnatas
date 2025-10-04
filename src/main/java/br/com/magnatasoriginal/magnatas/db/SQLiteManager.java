@@ -21,6 +21,13 @@ public class SQLiteManager {
     public void initializeDatabase() {
         try (Connection conn = openConnection()) {
             Statement stmt = conn.createStatement();
+            // Tabela de warps públicas
+            stmt.execute("CREATE TABLE IF NOT EXISTS warps (" +
+                    "name TEXT PRIMARY KEY, " +
+                    "x REAL, " +
+                    "y REAL, " +
+                    "z REAL, " +
+                    "world TEXT)");
 
             // Tabela de homes
             stmt.execute("CREATE TABLE IF NOT EXISTS homes (" +

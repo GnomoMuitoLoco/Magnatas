@@ -54,7 +54,7 @@ public class TeleportLojaCommand implements CommandExecutor {
                 new BukkitRunnable() {
                     @Override
                     public void run() {
-                        if (player.hasPermission("magnatas.vip")) {
+                        if (player.hasPermission("magnatas.bypasscooldown")) {
                             player.teleport(loc);
                             player.sendMessage("Você foi teleportado para a loja de " + lojaOwner + "!");
                         } else {
