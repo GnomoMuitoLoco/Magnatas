@@ -135,7 +135,7 @@ public class LojaGUI implements Listener {
                                 if (event.isRightClick()) {
                                     if (player.hasPermission("magnatas.delloja") || playerName.equals(player.getName())) {
                                         pendingDeletions.put(player, playerName);
-                                        player.sendMessage(plugin.getMessage("confirmacao_remocao", playerName));
+                                        player.sendMessage(plugin.getMensagens().get("loja.confirmacao_remocao", playerName));
                                     } else {
                                         player.sendMessage("Você não tem permissão para excluir a loja de outros jogadores.");
                                     }
@@ -143,7 +143,7 @@ public class LojaGUI implements Listener {
                                     if (loc != null) {
                                         teleportPlayer(player, loc, playerName);
                                     } else {
-                                        player.sendMessage(plugin.getMessage("loja_nao_encontrada", playerName));
+                                        player.sendMessage(plugin.getMensagens().get("loja.nao_encontrada", playerName));
                                     }
                                 }
                             }
@@ -157,13 +157,13 @@ public class LojaGUI implements Listener {
     }
 
     public void teleportPlayer(Player player, Location loc, String playerName) {
-        if (player.hasPermission("magnatas.vip")) {
+        if (player.hasPermission("magnatas.bypasscooldown")) {
             player.teleport(loc);
             plugin.logVisit(player.getName(), playerName);
-            player.sendMessage(plugin.getMessage("teleporte_sucesso", playerName));
+            player.sendMessage(plugin.getMensagens().get("loja.teleportado", playerName));
         } else {
             if (pendingTeleports.containsKey(player)) {
-                player.sendMessage(plugin.getMessage("teleporte_ja_em_progresso"));
+                player.sendMessage(plugin.getMensagens().get("loja.teleporte_em_progresso"));
                 return;
             }
 
@@ -202,7 +202,7 @@ public class LojaGUI implements Listener {
                         return;
                     }
 
-                    player.sendMessage(plugin.getMessage("tempo_restante", String.valueOf(secondsRemaining)));
+                    player.sendMessage(plugin.getMensagens().get("loja.tempo_restante", String.valueOf(secondsRemaining)));
                     secondsRemaining--;
                 }
             }.runTaskTimer(plugin, 0L, 20L);
@@ -211,14 +211,14 @@ public class LojaGUI implements Listener {
         public void cancel() {
             cancelled = true;
             pendingTeleports.remove(player);
-            player.sendMessage(plugin.getMessage("teleporte_cancelado"));
+            player.sendMessage(plugin.getMensagens().get("loja.teleporte_cancelado"));
         }
 
         private void completeTeleport() {
             if (!cancelled && pendingTeleports.containsKey(player)) {
                 player.teleport(targetLocation);
                 plugin.logVisit(player.getName(), playerName);
-                player.sendMessage(plugin.getMessage("teleporte_sucesso", playerName));
+                player.sendMessage(plugin.getMensagens().get("loja.teleportado", playerName));
                 pendingTeleports.remove(player);
             }
         }

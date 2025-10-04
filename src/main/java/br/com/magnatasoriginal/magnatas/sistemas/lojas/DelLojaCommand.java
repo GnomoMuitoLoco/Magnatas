@@ -32,7 +32,7 @@ public class DelLojaCommand implements CommandExecutor {
             if (player.hasPermission("magnatas.delloja.others")) {
                 rawTargetName = args[0];
             } else {
-                player.sendMessage("Você não tem permissão para remover a loja de outro jogador.");
+                player.sendMessage(plugin.getMensagens().get("loja.nao_pode_remover_loja"));
                 return true;
             }
         } else {
@@ -53,8 +53,8 @@ public class DelLojaCommand implements CommandExecutor {
                         @Override
                         public void run() {
                             if (affected > 0) {
-                                player.sendMessage(plugin.getMessage("loja_removida"));
-                                plugin.getServer().broadcastMessage(plugin.getMessage("broadcast_loja_removida", rawTargetName));
+                                player.sendMessage(plugin.getMensagens().get("loja.removida"));
+                                plugin.getServer().broadcastMessage(plugin.getMensagens().get("loja.fechou", rawTargetName));
                                 plugin.getServer().getPluginManager().callEvent(new LojaAtualizadaEvent());
                             } else {
                                 player.sendMessage("Nenhuma loja encontrada para " + rawTargetName + ".");

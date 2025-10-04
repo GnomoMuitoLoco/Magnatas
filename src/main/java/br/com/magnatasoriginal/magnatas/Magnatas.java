@@ -8,14 +8,19 @@ import br.com.magnatasoriginal.magnatas.listeners.PlayerJoinListener;
 
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.AjudaAnuncioTask;
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MagnatasCommandDispatcher;
-import org.bukkit.ChatColor;
+import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemChaves;
+import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemProvider;
+import br.com.magnatasoriginal.magnatas.sistemas.warps.*;
+
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,39 +34,56 @@ public final class Magnatas extends JavaPlugin {
     private SQLiteManager sqliteManager;
     private FileConfiguration config;
     private HomeManager homeManager;
+    private WarpManager warpManager;
+    private MensagemProvider mensagens;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
         config = getConfig();
+        saveResource("Sistemas/Mensagens/pt_br.yml", false);
+        File arquivoMensagens = new File(getDataFolder(), "Sistemas/Mensagens/pt_br.yml");
+        YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(arquivoMensagens);
 
-        int intervalo = getConfig().getInt("mensagens.ajuda_convite.intervalo", 300);
-        BukkitTask tarefaAjuda = new AjudaAnuncioTask(this, config)
+        mensagens = new MensagemProvider(yamlConfiguration);
+
+        int intervalo = config.getInt("sistemas.mensagens.ajuda.intervalo", 300);
+        BukkitTask tarefaAjuda = new AjudaAnuncioTask(this, mensagens)
                 .runTaskTimer(this, 20L * intervalo, 20L * intervalo);
+
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "Sistemas/Mensagens/pt_br.yml"));
+        MensagemProvider mensagens = new MensagemProvider(config);
+        verificarMensagens(mensagens);
 
         getLogger().info("Sistema de Lojas Ativado!");
         getLogger().info("Sistema de Homes Ativado!");
-        getLogger().info("Sistema de Warps - Em Desenvolvimento!");
+        getLogger().info("Sistema de Warps - Ativado");
         getLogger().info("Sistema de Tokens - Ativado!");
         getLogger().info("Sistema de Mensagens - Em Desenvolvimento!");
         getLogger().info("Sistema de Limites - Em Desenvolvimento!");
-        getLogger().info("Idealizando projeto...");
+        getLogger().info("Outros sistemas sendo desenvolvidos...");
+
+         // Inicializa o gerenciador de banco de dados
 
         sqliteManager = new SQLiteManager(this);
         sqliteManager.initializeDatabase();
 
         try {
             homeManager = new HomeManager(sqliteManager.openConnection());
+            warpManager = new WarpManager(sqliteManager);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
         Tokens tokens = new Tokens(this); // Instancia sistema de Tokens
 
-
         // Comandos de mensagens
-        getCommand("magnatas").setExecutor(new MagnatasCommandDispatcher(this, tarefaAjuda));
-        // Comandos de lojas e homes
+        getCommand("magnatas").setExecutor(new MagnatasCommandDispatcher(this, mensagens, tarefaAjuda));
+        // Comandos de lojas, homes e warps
+        Objects.requireNonNull(getCommand("setwarp")).setExecutor(new SetWarpCommand(this));
+        Objects.requireNonNull(getCommand("delwarp")).setExecutor(new DelWarpCommand(this));
+        Objects.requireNonNull(getCommand("warp")).setExecutor(new WarpCommand(this));
+        Objects.requireNonNull(getCommand("warps")).setExecutor(new WarpsCommand(this));
         Objects.requireNonNull(getCommand("lojas")).setExecutor(new LojaCommand(this));
         Objects.requireNonNull(getCommand("setloja")).setExecutor(new SetLojaCommand(this));
         Objects.requireNonNull(getCommand("delloja")).setExecutor(new DelLojaCommand(this));
@@ -110,14 +132,20 @@ public final class Magnatas extends JavaPlugin {
         return homeManager;
     }
 
+    public WarpManager getWarpManager() {
+        return warpManager;
+    }
 
-    public String getMessage(String key, String... args) {
-        String message = config.getString("messages." + key, "Mensagem não encontrada: " + key);
-        message = ChatColor.translateAlternateColorCodes('&', message);
-        for (int i = 0; i < args.length; i++) {
-            message = message.replace("%" + (i + 1), args[i]);
+    public MensagemProvider getMensagens() {
+        return mensagens;
+    }
+
+    public void verificarMensagens(MensagemProvider mensagens) {
+        for (String chave : MensagemChaves.AJUDA) {
+            if (mensagens.getConfig().getString(chave) == null) {
+                getLogger().warning("⚠ Mensagem ausente no pt_br.yml: " + chave);
+            }
         }
-        return message;
     }
 
     // ================================

@@ -18,6 +18,11 @@ public class AjudaCommand implements CommandExecutor {
     private final Map<UUID, UUID> chamadosPendentes = new HashMap<>();
     private final Map<UUID, Long> cooldowns = new HashMap<>();
     private final long cooldownSegundos = 300;
+    private final MensagemProvider mensagens;
+
+    public AjudaCommand(MensagemProvider mensagens) {
+        this.mensagens = mensagens;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -41,10 +46,10 @@ public class AjudaCommand implements CommandExecutor {
     }
 
     private void enviarMensagemInterativa(Player player) {
-        TextComponent msg = new TextComponent("§ePrecisa de ajuda? §a<Clique aqui> §epara chamar um ajudante.");
-        msg.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/magnatas ajuda solicitar"));
+        TextComponent msg = new TextComponent(mensagens.get("ajuda.msg_interativa_texto"));
+        msg.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, mensagens.get("ajuda.msg_interativa_comando")));
         msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                new ComponentBuilder("§7Clique para solicitar ajuda").create()));
+                new ComponentBuilder(mensagens.get("ajuda.msg_interativa_hover")).create()));
         player.spigot().sendMessage(msg);
     }
 
@@ -53,7 +58,7 @@ public class AjudaCommand implements CommandExecutor {
         long agora = System.currentTimeMillis() / 1000;
 
         if (cooldowns.containsKey(id) && agora - cooldowns.get(id) < cooldownSegundos) {
-            jogador.sendMessage("§cVocê já solicitou ajuda recentemente. Aguarde um pouco.");
+            jogador.sendMessage(mensagens.get("ajuda.cooldown"));
             return true;
         }
 
@@ -62,19 +67,19 @@ public class AjudaCommand implements CommandExecutor {
                 .collect(Collectors.toList());
 
         if (ajudantes.isEmpty()) {
-            jogador.sendMessage("§cNão há nenhum ajudante online no momento.");
+            jogador.sendMessage(mensagens.get("ajuda.sem_ajudantes"));
             return true;
         }
 
-        jogador.sendMessage("§aVocê solicitou ajuda, aguarde, um ajudante irá até você...");
+        jogador.sendMessage(mensagens.get("ajuda.solicitada"));
         chamadosPendentes.put(id, null);
         cooldowns.put(id, agora);
 
         for (Player ajudante : ajudantes) {
-            TextComponent msg = new TextComponent("§eUm jogador está solicitando ajuda. §a<Clique aqui> §epara ajudá-lo.");
+            TextComponent msg = new TextComponent(mensagens.get("ajuda.msg_para_ajudante"));
             msg.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/magnatas ajuda ajudar " + jogador.getName()));
             msg.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder("§7Clique para teleportar até " + jogador.getName()).create()));
+                    new ComponentBuilder(mensagens.get("ajuda.msg_hover_ajudante", jogador.getName())).create()));
             ajudante.spigot().sendMessage(msg);
         }
 
@@ -84,24 +89,19 @@ public class AjudaCommand implements CommandExecutor {
     private boolean atenderAjuda(Player ajudante, String nomeJogador) {
         Player jogador = Bukkit.getPlayer(nomeJogador);
         if (jogador == null) {
-            ajudante.sendMessage("§cJogador não encontrado ou offline.");
+            ajudante.sendMessage(mensagens.get("ajuda.jogador_offline"));
             return true;
         }
 
         UUID id = jogador.getUniqueId();
-        if (!chamadosPendentes.containsKey(id)) {
-            ajudante.sendMessage("§cOutro ajudante já respondeu a este chamado.");
-            return true;
-        }
-
-        if (chamadosPendentes.get(id) != null) {
-            ajudante.sendMessage("§cOutro ajudante já respondeu a este chamado.");
+        if (!chamadosPendentes.containsKey(id) || chamadosPendentes.get(id) != null) {
+            ajudante.sendMessage(mensagens.get("ajuda.chamado_respondido"));
             return true;
         }
 
         ajudante.teleport(jogador.getLocation());
-        ajudante.sendMessage("§aVocê está ajudando " + jogador.getName() + ".");
-        jogador.sendMessage("§aUm ajudante está vindo te ajudar!");
+        ajudante.sendMessage(mensagens.get("ajuda.ajudando", jogador.getName()));
+        jogador.sendMessage(mensagens.get("ajuda.ajudado"));
         chamadosPendentes.put(id, ajudante.getUniqueId());
         return true;
     }

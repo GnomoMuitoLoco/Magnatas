@@ -36,15 +36,15 @@ public class SetLojaCommand implements CommandExecutor {
                     new BukkitRunnable() {
                         @Override
                         public void run() {
-                            player.sendMessage(plugin.getMessage("loja_existe"));
+                            player.sendMessage(plugin.getMensagens().get("loja.existe"));
                         }
                     }.runTask(plugin);
                     return;
                 }
 
                 plugin.saveLoja(playerName, loc, () -> {
-                    player.sendMessage(plugin.getMessage("loja_setada"));
-                    plugin.getServer().broadcastMessage(plugin.getMessage("broadcast_loja_criada", playerName));
+                    player.sendMessage(plugin.getMensagens().get("loja.setada"));
+                    plugin.getServer().broadcastMessage(plugin.getMensagens().get("loja.criada", playerName));
                     plugin.getServer().getPluginManager().callEvent(new LojaAtualizadaEvent());
                 });
             }

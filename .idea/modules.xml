@@ -2,7 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Magnatas.iml" filepath="$PROJECT_DIR$/.idea/modules/Magnatas.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/Magnatas.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Magnatas.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Magnatas.test.iml" filepath="$PROJECT_DIR$/.idea/modules/Magnatas.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/br.com.magnatasoriginal.Magnatas.main.iml" filepath="$PROJECT_DIR$/.idea/modules/br.com.magnatasoriginal.Magnatas.main.iml" />
     </modules>
   </component>
 </project>

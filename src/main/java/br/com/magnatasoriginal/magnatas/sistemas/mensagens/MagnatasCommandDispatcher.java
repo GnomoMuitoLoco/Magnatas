@@ -14,10 +14,10 @@ public class MagnatasCommandDispatcher implements CommandExecutor {
 
     private final Map<String, CommandExecutor> subcomandos = new HashMap<>();
 
-    public MagnatasCommandDispatcher(Plugin plugin, BukkitTask tarefaAjuda) {
+    public MagnatasCommandDispatcher(Plugin plugin, MensagemProvider mensagens, BukkitTask tarefaAjuda) {
         subcomandos.put("info", new InfoCommand());
-        subcomandos.put("ajuda", new AjudaCommand());
-        subcomandos.put("reload", new ReloadCommand(plugin, tarefaAjuda));
+        subcomandos.put("ajuda", new AjudaCommand(mensagens));
+        subcomandos.put("reload", new ReloadCommand(plugin, mensagens, tarefaAjuda));
         // você pode adicionar outros aqui: wiki, discord, etc.
     }
 
