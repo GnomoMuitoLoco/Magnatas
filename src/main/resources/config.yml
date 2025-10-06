@@ -1,1 +1,24 @@
 ajuda_convite_intervalo: 300 # tempo em segundos entre cada mensagem automática
+
+limites:
+  altura:
+    min: 0
+    max: 128
+
+  escaneamento:
+    delay_entre_lotes: 10       # Ticks entre cada lote
+    tamanho_do_lote: 10         # Chunks por lote
+    progresso:
+      mostrar: true             # Exibir progresso no chat
+      intervalo_lotes: 5        # A cada quantos lotes mostrar progresso
+
+  scan:
+    raio_maximo: 5              # Máximo permitido para /limite scan [raio]
+    mundos_permitidos:         # Mundos que podem ser escaneados
+      - world
+      - world_nether
+      - world_the_end
+
+mensagens:
+  usar_arquivo_externo: true    # Se true, carrega de sistemas/mensagens/pt_br.yml
+  caminho: "Sistemas/Mensagens/pt_br.yml"

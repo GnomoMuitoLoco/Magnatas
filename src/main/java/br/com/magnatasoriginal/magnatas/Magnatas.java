@@ -1,5 +1,6 @@
 package br.com.magnatasoriginal.magnatas;
 
+import br.com.magnatasoriginal.magnatas.sistemas.antilag.limites.*;
 import br.com.magnatasoriginal.magnatas.sistemas.homes.*;
 import br.com.magnatasoriginal.magnatas.sistemas.lojas.*;
 import br.com.magnatasoriginal.magnatas.sistemas.economia.*;
@@ -12,6 +13,8 @@ import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemChaves;
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemProvider;
 import br.com.magnatasoriginal.magnatas.sistemas.warps.*;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -25,9 +28,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.logging.Level;
 
 public final class Magnatas extends JavaPlugin {
@@ -36,38 +37,15 @@ public final class Magnatas extends JavaPlugin {
     private HomeManager homeManager;
     private WarpManager warpManager;
     private MensagemProvider mensagens;
+    private LimitesManager limitesManager;
 
     @Override
     public void onEnable() {
-        saveDefaultConfig();
-        config = getConfig();
-        saveResource("Sistemas/Mensagens/pt_br.yml", false);
-        File arquivoMensagens = new File(getDataFolder(), "Sistemas/Mensagens/pt_br.yml");
-        YamlConfiguration yamlConfiguration = YamlConfiguration.loadConfiguration(arquivoMensagens);
-
-        mensagens = new MensagemProvider(yamlConfiguration);
-
-        int intervalo = config.getInt("sistemas.mensagens.ajuda.intervalo", 300);
-        BukkitTask tarefaAjuda = new AjudaAnuncioTask(this, mensagens)
-                .runTaskTimer(this, 20L * intervalo, 20L * intervalo);
-
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(new File(getDataFolder(), "Sistemas/Mensagens/pt_br.yml"));
-        MensagemProvider mensagens = new MensagemProvider(config);
-        verificarMensagens(mensagens);
-
-        getLogger().info("Sistema de Lojas Ativado!");
-        getLogger().info("Sistema de Homes Ativado!");
-        getLogger().info("Sistema de Warps - Ativado");
-        getLogger().info("Sistema de Tokens - Ativado!");
-        getLogger().info("Sistema de Mensagens - Em Desenvolvimento!");
-        getLogger().info("Sistema de Limites - Em Desenvolvimento!");
-        getLogger().info("Outros sistemas sendo desenvolvidos...");
-
-         // Inicializa o gerenciador de banco de dados
-
+        // Inicializa o gerenciador de banco de dados
         sqliteManager = new SQLiteManager(this);
         sqliteManager.initializeDatabase();
 
+        // Inicializa os gerenciadores de sistemas Homes e Warps
         try {
             homeManager = new HomeManager(sqliteManager.openConnection());
             warpManager = new WarpManager(sqliteManager);
@@ -75,11 +53,39 @@ public final class Magnatas extends JavaPlugin {
             throw new RuntimeException(e);
         }
 
-        Tokens tokens = new Tokens(this); // Instancia sistema de Tokens
+        // 🔧 Carrega config principal
+        saveDefaultConfig();
+        config = getConfig(); // config.yml em /resources/
 
-        // Comandos de mensagens
+        // 💬 Carrega mensagens localizadas
+        String caminhoMensagens = "Sistemas/Mensagens/pt_br.yml";
+        saveResource(caminhoMensagens, false);
+        File arquivoMensagens = new File(getDataFolder(), caminhoMensagens);
+        YamlConfiguration mensagensConfig = YamlConfiguration.loadConfiguration(arquivoMensagens);
+        mensagens = new MensagemProvider(mensagensConfig);
+        verificarMensagens(mensagens);
+
+        // 📢 Tarefa de ajuda automática
+        int intervaloAjuda = config.getInt("ajuda_convite_intervalo", 300);
+        BukkitTask tarefaAjuda = new AjudaAnuncioTask(this, mensagens)
+                .runTaskTimer(this, 20L * intervaloAjuda, 20L * intervaloAjuda);
+
+        // 🧱 Inicializa o sistema de limites
+        LimitesStorage limitesStorage = new LimitesStorage(sqliteManager);
+        limitesManager = new LimitesManager(limitesStorage);
+        new LimitesBlockListener(limitesManager, this);
+
+        // 💰 Inicializa o sistema de Tokens
+        Tokens tokens = new Tokens(this);
+
+        // 📜 Comandos de limites
+        getCommand("limite").setExecutor(new LimiteCommand(limitesManager, this));
+        getCommand("limites").setExecutor(new LimitesCommand(limitesManager, this));
+
+        // 📜 Comando de mensagens
         getCommand("magnatas").setExecutor(new MagnatasCommandDispatcher(this, mensagens, tarefaAjuda));
-        // Comandos de lojas, homes e warps
+
+        // 📜 Comandos de lojas, homes e warps
         Objects.requireNonNull(getCommand("setwarp")).setExecutor(new SetWarpCommand(this));
         Objects.requireNonNull(getCommand("delwarp")).setExecutor(new DelWarpCommand(this));
         Objects.requireNonNull(getCommand("warp")).setExecutor(new WarpCommand(this));
@@ -93,14 +99,25 @@ public final class Magnatas extends JavaPlugin {
         Objects.requireNonNull(getCommand("delhome")).setExecutor(new DelHomeCommand(this));
         Objects.requireNonNull(getCommand("homes")).setExecutor(new HomesCommand(this));
 
-        // Comandos de Tokens
+        // 📜 Comandos de Tokens
         Objects.requireNonNull(getCommand("token")).setExecutor(new TokenCommand(this, tokens));
         Objects.requireNonNull(getCommand("addtoken")).setExecutor(new AdminTokenCommand(this, tokens));
         Objects.requireNonNull(getCommand("removetoken")).setExecutor(new AdminTokenCommand(this, tokens));
         Objects.requireNonNull(getCommand("settoken")).setExecutor(new AdminTokenCommand(this, tokens));
         Objects.requireNonNull(getCommand("vertoken")).setExecutor(new AdminTokenCommand(this, tokens));
 
+
+
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
+
+        // ✅ Log de inicialização
+        getLogger().info("Sistema de Lojas Ativado!");
+        getLogger().info("Sistema de Homes Ativado!");
+        getLogger().info("Sistema de Warps - Ativado");
+        getLogger().info("Sistema de Tokens - Ativado!");
+        getLogger().info("Sistema de Mensagens - Em Desenvolvimento!");
+        getLogger().info("Sistema de Limites - Em Desenvolvimento!");
+        getLogger().info("Outros sistemas sendo desenvolvidos...");
 
         getLogger().info("    __  ___                        __            ");
         getLogger().info("   /  |/  /___ _____ _____  ____ _/ /_____ ______");
@@ -118,6 +135,10 @@ public final class Magnatas extends JavaPlugin {
     @Override
     public void onDisable() {
         getLogger().info("Plugin Magnatas Desativado!");
+    }
+
+    public LimitesManager getLimitesManager() {
+        return limitesManager;
     }
 
     public String normalize(String name) {

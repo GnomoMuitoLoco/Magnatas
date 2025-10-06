@@ -21,6 +21,11 @@ public class SQLiteManager {
     public void initializeDatabase() {
         try (Connection conn = openConnection()) {
             Statement stmt = conn.createStatement();
+            //Tabe de Limites
+            stmt.execute("CREATE TABLE IF NOT EXISTS limites_blocos (" +
+                    "bloco_id TEXT PRIMARY KEY, " +
+                    "quantidade INTEGER)");
+
             // Tabela de warps públicas
             stmt.execute("CREATE TABLE IF NOT EXISTS warps (" +
                     "name TEXT PRIMARY KEY, " +
