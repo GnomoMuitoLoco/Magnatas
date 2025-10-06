@@ -12,11 +12,11 @@ Com comandos intuitivos e permissões bem definidas, o plugin proporciona contro
 
 ## Comandos e Permissões
 **Sistema de limites**
-/limite - `magnatas.limites` - gerenciar limites de blocos
-/limites - `default` - listar blocos limitados
-(bônus) - `magnatas.admin.limites.bypass` - ignorar limites por chunk
-(bônus) - `magnatas.admin.limites.alerta` - receber alertas de escaneamento
-(bônus) - `magnatas.admin.limites.progresso` - ver progresso da varredura
+- /limite - `magnatas.limites` - gerenciar limites de blocos
+- /limites - `default` - listar blocos limitados
+- (bônus) - `magnatas.admin.limites.bypass` - ignorar limites por chunk
+- (bônus) - `magnatas.admin.limites.alerta` - receber alertas de escaneamento
+- (bônus) - `magnatas.admin.limites.progresso` - ver progresso da varredura
 
 **Sistema de homes**
 - /sethome - `magnatas.homes.1` - definir uma home
