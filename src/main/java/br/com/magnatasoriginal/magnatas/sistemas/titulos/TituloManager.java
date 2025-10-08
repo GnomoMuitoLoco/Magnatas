@@ -4,6 +4,7 @@ import br.com.magnatasoriginal.magnatas.Magnatas;
 import br.com.magnatasoriginal.magnatas.db.SQLiteManager;
 import org.bukkit.entity.Player;
 
+import java.io.File;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -13,7 +14,6 @@ public class TituloManager {
     private final Magnatas plugin;
     private final SQLiteManager sqlite;
 
-    // Cache em memória
     private final Map<String, Titulo> titulosRegistrados = new HashMap<>();
     private final Map<UUID, Set<String>> titulosPorJogador = new HashMap<>();
     private final Map<UUID, String> tituloEquipado = new HashMap<>();
@@ -24,13 +24,11 @@ public class TituloManager {
 
         criarTabelas();
         carregarTitulos();
+        carregarTitulosConfigurados(new File(plugin.getDataFolder(), "Sistemas/Titulos/titulos.yml"));
         carregarTitulosJogadores();
         carregarTitulosEquipados();
     }
 
-    // =========================
-    // Inicialização do banco
-    // =========================
     private void criarTabelas() {
         try (Connection conn = sqlite.openConnection();
              Statement stmt = conn.createStatement()) {
@@ -38,7 +36,6 @@ public class TituloManager {
             stmt.execute("CREATE TABLE IF NOT EXISTS titulos (" +
                     "nome TEXT PRIMARY KEY, " +
                     "descricao TEXT, " +
-                    "tipo TEXT, " +
                     "expiraEm TEXT)");
 
             stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulos (" +
@@ -58,9 +55,6 @@ public class TituloManager {
         }
     }
 
-    // =========================
-    // CRUD de Títulos
-    // =========================
     public void registrarTitulo(Titulo titulo) {
         titulosRegistrados.put(titulo.getNome().toLowerCase(), titulo);
         salvarTitulo(titulo);
@@ -77,11 +71,10 @@ public class TituloManager {
     private void salvarTitulo(Titulo titulo) {
         try (Connection conn = sqlite.openConnection();
              PreparedStatement ps = conn.prepareStatement(
-                     "INSERT OR REPLACE INTO titulos (nome, descricao, tipo, expiraEm) VALUES (?, ?, ?, ?)")) {
+                     "INSERT OR REPLACE INTO titulos (nome, descricao, expiraEm) VALUES (?, ?, ?)")) {
             ps.setString(1, titulo.getNome());
             ps.setString(2, titulo.getDescricao());
-            ps.setString(3, titulo.getTipo().name());
-            ps.setString(4, titulo.getExpiraEm() != null ? titulo.getExpiraEm().toString() : null);
+            ps.setString(3, titulo.getExpiraEm() != null ? titulo.getExpiraEm().toString() : null);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -96,11 +89,14 @@ public class TituloManager {
             while (rs.next()) {
                 String nome = rs.getString("nome");
                 String descricao = rs.getString("descricao");
-                Titulo.Tipo tipo = Titulo.Tipo.valueOf(rs.getString("tipo"));
                 String expiraStr = rs.getString("expiraEm");
                 LocalDateTime expiraEm = expiraStr != null ? LocalDateTime.parse(expiraStr) : null;
 
-                titulosRegistrados.put(nome.toLowerCase(), new Titulo(nome, descricao, tipo, expiraEm));
+                Titulo titulo = new Titulo(nome, plugin.colorir(nome), plugin.colorir(descricao),
+                        "magnatas.titulos." + nome.toLowerCase(), nome.toLowerCase(), "Banco",
+                        expiraEm != null ? java.time.Duration.between(LocalDateTime.now(), expiraEm).toMillis() : 0);
+
+                titulosRegistrados.put(nome.toLowerCase(), titulo);
             }
 
         } catch (SQLException e) {
@@ -108,9 +104,15 @@ public class TituloManager {
         }
     }
 
-    // =========================
-    // Jogadores
-    // =========================
+    public void carregarTitulosConfigurados(File configFile) {
+        if (!configFile.exists()) return;
+
+        TituloConfigLoader loader = new TituloConfigLoader(configFile);
+        for (Titulo titulo : loader.getTitulos()) {
+            registrarTitulo(titulo);
+        }
+    }
+
     public void darTitulo(Player player, String nome) {
         titulosPorJogador.computeIfAbsent(player.getUniqueId(), k -> new HashSet<>()).add(nome.toLowerCase());
         salvarTituloDoJogador(player.getUniqueId(), nome.toLowerCase());
@@ -187,12 +189,10 @@ public class TituloManager {
         }
     }
 
-    // Retorna um mapa imutável (somente leitura) com os títulos por jogador
     public Map<UUID, Set<String>> getTitulosPorJogador() {
         return Collections.unmodifiableMap(titulosPorJogador);
     }
 
-    // Retorna a quantidade de títulos que um jogador possui
     public int getQuantidadeTitulos(UUID uuid) {
         return titulosPorJogador.getOrDefault(uuid, Collections.emptySet()).size();
     }
@@ -210,7 +210,6 @@ public class TituloManager {
 
         } catch (SQLException e) {
             e.printStackTrace();
-
         }
     }
 }

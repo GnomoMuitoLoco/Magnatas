@@ -25,7 +25,6 @@ public class SQLiteManager {
             stmt.execute("CREATE TABLE IF NOT EXISTS titulos (" +
                     "nome TEXT PRIMARY KEY, " +
                     "descricao TEXT, " +
-                    "tipo TEXT, " +
                     "expiraEm TEXT)");
 
             // Títulos conquistados por jogadores

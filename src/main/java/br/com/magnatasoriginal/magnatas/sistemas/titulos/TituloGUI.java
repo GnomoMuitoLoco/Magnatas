@@ -1,7 +1,6 @@
 package br.com.magnatasoriginal.magnatas.sistemas.titulos;
 
 import br.com.magnatasoriginal.magnatas.Magnatas;
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -12,6 +11,7 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class TituloGUI implements Listener {
@@ -24,9 +24,6 @@ public class TituloGUI implements Listener {
         this.tituloMenu = new TituloMenu();
     }
 
-    /**
-     * Abre o menu de títulos para o jogador
-     */
     public void openMenu(Player player) {
         Set<String> titulosDoJogador = plugin.getTituloManager().getTitulosDoJogador(player);
         int itemsPerPage = 28;
@@ -55,14 +52,22 @@ public class TituloGUI implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta == null) return;
 
-        meta.setDisplayName(ChatColor.GOLD + titulo.getNome());
+        meta.setDisplayName(titulo.getNomeVisivel());
 
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + titulo.getDescricao());
-        lore.add(ChatColor.YELLOW + "Tipo: " + titulo.getTipo().name());
-        if (titulo.getExpiraEm() != null) {
-            lore.add(ChatColor.RED + "Expira em: " + titulo.getExpiraEm().toString());
+        lore.add(ChatColor.AQUA + "Obtenção: " + ChatColor.WHITE + titulo.getObtencao());
+
+        if (titulo.isPermanente()) {
+            lore.add(ChatColor.GREEN + "Duração: Permanente");
+        } else if (titulo.getExpiraEm() != null) {
+            String formatado = titulo.getExpiraEm().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+            lore.add(ChatColor.RED + "Expira em: " + formatado);
+        } else {
+            String tempoFormatado = plugin.formatarDuracao(titulo.getDuracaoMillis());
+            lore.add(ChatColor.RED + "Duração: " + tempoFormatado);
         }
+
         lore.add("");
         lore.add(ChatColor.GREEN + "Clique esquerdo para equipar");
         lore.add(ChatColor.RED + "Clique direito para remover");
@@ -111,10 +116,15 @@ public class TituloGUI implements Listener {
 
                 if (event.isLeftClick()) {
                     plugin.getTituloManager().equiparTitulo(player, titulo.getNome());
-                    player.sendMessage(ChatColor.GREEN + "Você equipou o título: " + titulo.getNome());
+                    player.sendMessage(ChatColor.GREEN + "Você equipou o título: " + titulo.getNomeVisivel());
                 } else if (event.isRightClick()) {
-                    plugin.getTituloManager().removerTitulo(player);
-                    player.sendMessage(ChatColor.YELLOW + "Você removeu seu título atual.");
+                    String equipado = plugin.getTituloManager().getTituloEquipado(player);
+                    if (equipado != null && equipado.equalsIgnoreCase(titulo.getNome())) {
+                        plugin.getTituloManager().removerTitulo(player);
+                        player.sendMessage(ChatColor.YELLOW + "Você removeu seu título atual.");
+                    } else {
+                        player.sendMessage(ChatColor.RED + "Você não está usando esse título.");
+                    }
                 }
             } else if (itemType == Material.ARROW) {
                 tituloMenu.handleClick(event);

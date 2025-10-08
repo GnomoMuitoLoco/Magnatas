@@ -66,6 +66,7 @@ public final class Magnatas extends JavaPlugin {
         mensagens = new MensagemProvider(mensagensConfig);
         verificarMensagens(mensagens);
 
+
         // 📢 Tarefa de ajuda automática
         int intervaloAjuda = config.getInt("ajuda_convite_intervalo", 300);
         BukkitTask tarefaAjuda = new AjudaAnuncioTask(this, mensagens)
@@ -185,6 +186,21 @@ public final class Magnatas extends JavaPlugin {
                 getLogger().warning("⚠ Mensagem ausente no pt_br.yml: " + chave);
             }
         }
+    }
+
+    public static String formatarDuracao(long millis) {
+        long totalSeconds = millis / 1000;
+        long dias = totalSeconds / 86400;
+        long horas = (totalSeconds % 86400) / 3600;
+        long minutos = (totalSeconds % 3600) / 60;
+
+        if (dias > 0) return dias + " dia" + (dias > 1 ? "s" : "");
+        if (horas > 0) return horas + " hora" + (horas > 1 ? "s" : "");
+        return minutos + " minuto" + (minutos > 1 ? "s" : "");
+    }
+
+    public String colorir(String texto) {
+        return org.bukkit.ChatColor.translateAlternateColorCodes('&', texto);
     }
 
     // ================================

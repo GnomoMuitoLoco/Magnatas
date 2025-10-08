@@ -1,0 +1,15 @@
+dragao:
+  nome_visivel: "&cDragão"
+  duracao: "1d"
+  descricao: "&7Título obtido por bravura em eventos de fogo."
+  nome_permissao: "dragao"
+  permissao: "magnatas.titulos.dragao"
+  obtencao: "Eventos"
+
+guerreiro:
+  nome_visivel: "&6Guerreiro"
+  duracao: "permanente"
+  descricao: "&7Título disponível na loja de tokens."
+  nome_permissao: "guerreiro"
+  permissao: "magnatas.titulos.guerreiro"
+  obtencao: "Loja de tokens"

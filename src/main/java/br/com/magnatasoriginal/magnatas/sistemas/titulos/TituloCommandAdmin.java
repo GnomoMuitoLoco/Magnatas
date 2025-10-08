@@ -2,13 +2,12 @@ package br.com.magnatasoriginal.magnatas.sistemas.titulos;
 
 import br.com.magnatasoriginal.magnatas.Magnatas;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
-import java.time.LocalDateTime;
+import java.util.Arrays;
 
 public class TituloCommandAdmin implements CommandExecutor {
 
@@ -23,76 +22,90 @@ public class TituloCommandAdmin implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if (!sender.hasPermission("titulos.admin")) {
-            sender.sendMessage(ChatColor.RED + "Você não tem permissão para usar este comando.");
+        if (!sender.hasPermission("magnatas.titulos.admin")) {
+            sender.sendMessage(plugin.getMensagens().get("titulos.admin.sem_permissao"));
             return true;
         }
 
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.YELLOW + "Uso: /titulosadmin <criar|dar|remover|listar>");
+            sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_geral"));
             return true;
         }
 
         switch (args[0].toLowerCase()) {
             case "criar":
                 if (args.length < 4) {
-                    sender.sendMessage(ChatColor.RED + "Uso: /titulosadmin criar <nome> <tipo> <descricao>");
+                    sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_criar"));
                     return true;
                 }
-                String nome = args[1];
-                String tipoStr = args[2].toUpperCase();
-                String descricao = String.join(" ", java.util.Arrays.copyOfRange(args, 3, args.length));
 
-                try {
-                    Titulo.Tipo tipo = Titulo.Tipo.valueOf(tipoStr);
-                    Titulo titulo = new Titulo(nome, descricao, tipo, null);
-                    tituloManager.registrarTitulo(titulo);
-                    sender.sendMessage(ChatColor.GREEN + "Título criado: " + nome + " (" + tipo + ")");
-                } catch (IllegalArgumentException e) {
-                    sender.sendMessage(ChatColor.RED + "Tipo inválido. Use: PERMANENTE, TEMPORARIO, SAZONAL, RANKING");
-                }
+                String nome = args[1];
+                String duracaoStr = args[2];
+                String descricao = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
+
+                long duracaoMillis = TituloConfigLoader.parseDuracao(duracaoStr);
+                Titulo titulo = new Titulo(
+                        nome,
+                        plugin.colorir(nome),
+                        plugin.colorir(descricao),
+                        "magnatas.titulos." + nome.toLowerCase(),
+                        nome.toLowerCase(),
+                        "Manual",
+                        duracaoMillis
+                );
+
+                tituloManager.registrarTitulo(titulo);
+                sender.sendMessage(plugin.getMensagens().get("titulos.admin.criado", titulo.getNomeVisivel()));
                 break;
 
             case "dar":
                 if (args.length < 3) {
-                    sender.sendMessage(ChatColor.RED + "Uso: /titulosadmin dar <jogador> <titulo>");
+                    sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_dar"));
                     return true;
                 }
+
                 OfflinePlayer alvo = Bukkit.getOfflinePlayer(args[1]);
                 String tituloNome = args[2];
+
                 if (tituloManager.getTituloPorNome(tituloNome) == null) {
-                    sender.sendMessage(ChatColor.RED + "Esse título não existe.");
+                    sender.sendMessage(plugin.getMensagens().get("titulos.titulo_inexistente"));
                     return true;
                 }
+
                 tituloManager.darTitulo(alvo.getPlayer(), tituloNome);
-                sender.sendMessage(ChatColor.GREEN + "Título " + tituloNome + " dado a " + alvo.getName());
+                sender.sendMessage(plugin.getMensagens().get("titulos.admin.dado", tituloNome, alvo.getName()));
                 break;
 
             case "remover":
                 if (args.length < 3) {
-                    sender.sendMessage(ChatColor.RED + "Uso: /titulosadmin remover <jogador> <titulo>");
+                    sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_remover"));
                     return true;
                 }
+
                 OfflinePlayer alvoRemover = Bukkit.getOfflinePlayer(args[1]);
                 String tituloRemover = args[2];
+
                 tituloManager.getTitulosDoJogador(alvoRemover.getPlayer()).remove(tituloRemover.toLowerCase());
-                sender.sendMessage(ChatColor.YELLOW + "Título " + tituloRemover + " removido de " + alvoRemover.getName());
+                sender.sendMessage(plugin.getMensagens().get("titulos.admin.removido", tituloRemover, alvoRemover.getName()));
                 break;
 
             case "listar":
                 if (args.length < 2) {
-                    sender.sendMessage(ChatColor.RED + "Uso: /titulosadmin listar <jogador>");
+                    sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_listar"));
                     return true;
                 }
+
                 OfflinePlayer alvoListar = Bukkit.getOfflinePlayer(args[1]);
-                sender.sendMessage(ChatColor.YELLOW + "Títulos de " + alvoListar.getName() + ":");
+                sender.sendMessage(plugin.getMensagens().get("titulos.admin.listando", alvoListar.getName()));
                 for (String t : tituloManager.getTitulosDoJogador(alvoListar.getPlayer())) {
-                    sender.sendMessage(ChatColor.GRAY + "- " + t);
+                    Titulo tObj = tituloManager.getTituloPorNome(t);
+                    String nomeFormatado = tObj != null ? tObj.getNomeVisivel() : t;
+                    sender.sendMessage("  §7- " + nomeFormatado);
                 }
                 break;
 
             default:
-                sender.sendMessage(ChatColor.RED + "Subcomando inválido. Use: criar, dar, remover, listar.");
+                sender.sendMessage(plugin.getMensagens().get("titulos.admin.subcomando_invalido"));
                 break;
         }
 
