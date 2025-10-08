@@ -24,7 +24,7 @@ public class MagnatasCommandDispatcher implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§eUse /magnatas [info|ajuda|wiki|discord|site|token|reload]");
+            sender.sendMessage("§eUse /magnatas info");
             return true;
         }
 

@@ -22,14 +22,14 @@ public class TeleportLojaCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage("Apenas jogadores podem usar este comando.");
+            sender.sendMessage("Apenas jogadores podem usar este comando."); // opcional: pode criar chave "geral.apenas_jogadores"
             return true;
         }
 
         Player player = (Player) sender;
 
         if (args.length == 0) {
-            player.sendMessage("Por favor, forneça o nome do jogador cuja loja você deseja visitar.");
+            player.sendMessage(plugin.getMensagens().get("loja.uso_comando"));
             return false;
         }
 
@@ -45,7 +45,7 @@ public class TeleportLojaCommand implements CommandExecutor {
                     new BukkitRunnable() {
                         @Override
                         public void run() {
-                            player.sendMessage("A loja do jogador " + lojaOwner + " não foi encontrada.");
+                            player.sendMessage(plugin.getMensagens().get("loja.nao_encontrada", lojaOwner));
                         }
                     }.runTask(plugin);
                     return;
@@ -56,14 +56,14 @@ public class TeleportLojaCommand implements CommandExecutor {
                     public void run() {
                         if (player.hasPermission("magnatas.bypasscooldown")) {
                             player.teleport(loc);
-                            player.sendMessage("Você foi teleportado para a loja de " + lojaOwner + "!");
+                            player.sendMessage(plugin.getMensagens().get("loja.teleportado", lojaOwner));
                         } else {
                             if (pendingTeleports.containsKey(player)) {
-                                player.sendMessage("Você já está em processo de teleporte.");
+                                player.sendMessage(plugin.getMensagens().get("loja.teleporte_em_progresso", lojaOwner));
                                 return;
                             }
 
-                            player.sendMessage("Teleportando em 5 segundos. Não se mova!");
+                            player.sendMessage(plugin.getMensagens().get("loja.teleporte_iniciado", lojaOwner));
 
                             BukkitRunnable task = new BukkitRunnable() {
                                 final Location initialLocation = player.getLocation();
@@ -72,7 +72,7 @@ public class TeleportLojaCommand implements CommandExecutor {
                                 @Override
                                 public void run() {
                                     if (!player.isOnline() || player.getLocation().distance(initialLocation) > 0.5) {
-                                        player.sendMessage("Você se moveu! Teleporte cancelado.");
+                                        player.sendMessage(plugin.getMensagens().get("loja.teleporte_cancelado"));
                                         pendingTeleports.remove(player);
                                         cancel();
                                         return;
@@ -80,12 +80,13 @@ public class TeleportLojaCommand implements CommandExecutor {
 
                                     if (seconds <= 0) {
                                         player.teleport(loc);
-                                        player.sendMessage("Você foi teleportado para a loja de " + lojaOwner + "!");
+                                        player.sendMessage(plugin.getMensagens().get("loja.teleportado", lojaOwner));
                                         pendingTeleports.remove(player);
                                         cancel();
                                         return;
                                     }
 
+                                    player.sendMessage(plugin.getMensagens().get("loja.tempo_restante", String.valueOf(seconds)));
                                     seconds--;
                                 }
                             };

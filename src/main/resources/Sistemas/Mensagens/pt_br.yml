@@ -12,6 +12,7 @@ loja:
   criada: "&eA loja de %1 foi inaugurada!"
   fechou: "&eA loja de %1 fechou as portas!"
   nao_pode_remover_loja: "&cVocê não pode remover a loja de %1 porque você não é o dono."
+  uso_comando: "&cUse: /loja <jogador>"
 
 ajuda:
   texto: "&ePrecisa de ajuda? &aClique aqui &epara chamar um ajudante."

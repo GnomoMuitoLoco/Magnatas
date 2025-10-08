@@ -135,7 +135,7 @@ public class LojaGUI implements Listener {
                                 if (event.isRightClick()) {
                                     if (player.hasPermission("magnatas.delloja") || playerName.equals(player.getName())) {
                                         pendingDeletions.put(player, playerName);
-                                        player.sendMessage(plugin.getMensagens().get("loja.confirmacao_remocao", playerName));
+                                        player.sendMessage(plugin.getMensagens().get("confirmar_remocao", playerName));
                                     } else {
                                         player.sendMessage("Você não tem permissão para excluir a loja de outros jogadores.");
                                     }
