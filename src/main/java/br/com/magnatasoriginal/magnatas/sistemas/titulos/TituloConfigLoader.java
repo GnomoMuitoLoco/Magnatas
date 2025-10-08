@@ -29,19 +29,20 @@ public class TituloConfigLoader {
             boolean loja = config.getBoolean(id + ".loja", true);
             int preco = config.getInt(id + ".preco", 0);
 
-            // Duração (se precisar usar em outro lugar)
+            // Duração (string original da config)
             String duracaoStr = config.getString(id + ".duracao", "permanente");
-            long duracaoMillis = parseDuracao(duracaoStr);
 
+            // Cria o título com o novo construtor
             Titulo titulo = new Titulo(
                     id,
                     ChatColor.translateAlternateColorCodes('&', nomeVisivel),
                     ChatColor.translateAlternateColorCodes('&', descricao),
                     permissao,
-                    nomePermissao,
                     obtencao,
+                    duracaoStr,
                     loja,
-                    preco
+                    preco,
+                    nomePermissao
             );
 
             titulos.put(id.toLowerCase(), titulo);
@@ -60,11 +61,12 @@ public class TituloConfigLoader {
         if (input.equalsIgnoreCase("permanente")) return 0;
 
         long totalMillis = 0;
-        Matcher matcher = Pattern.compile("(\\d+)([dms])").matcher(input);
+        Matcher matcher = Pattern.compile("(\\d+)([dhms])").matcher(input.toLowerCase());
         while (matcher.find()) {
             int valor = Integer.parseInt(matcher.group(1));
             switch (matcher.group(2)) {
                 case "d": totalMillis += valor * 86400000L; break;
+                case "h": totalMillis += valor * 3600000L; break;
                 case "m": totalMillis += valor * 60000L; break;
                 case "s": totalMillis += valor * 1000L; break;
             }

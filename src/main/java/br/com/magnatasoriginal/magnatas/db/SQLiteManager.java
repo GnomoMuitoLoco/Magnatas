@@ -25,7 +25,7 @@ public class SQLiteManager {
             stmt.execute("CREATE TABLE IF NOT EXISTS titulos (" +
                     "nome TEXT PRIMARY KEY, " +
                     "descricao TEXT, " +
-                    "expiraEm TEXT)");
+                    "expira_em INTEGER)");
 
             // Título atualmente equipado por jogador
             stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulo_equipado (" +

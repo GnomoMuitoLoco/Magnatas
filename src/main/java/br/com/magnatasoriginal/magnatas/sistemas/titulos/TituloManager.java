@@ -113,22 +113,41 @@ public class TituloManager {
                 String nome = rs.getString("nome");
                 String descricao = rs.getString("descricao");
 
-                Titulo titulo = new Titulo(
-                        nome,
-                        plugin.colorir(nome),
-                        plugin.colorir(descricao),
-                        "magnatas.titulos." + nome.toLowerCase(),
-                        "Banco",
-                        "permanente",
-                        false,
-                        0
-                );
+                // Se o banco tiver uma coluna de expiração, use-a
+                Timestamp expira = null;
+                try {
+                    expira = rs.getTimestamp("expira_em");
+                } catch (SQLException ignored) {
+                    // coluna pode não existir, então ignoramos
+                }
+
+                Titulo titulo;
+                if (expira != null) {
+                    // Usa construtor legado com expiração exata
+                    titulo = new Titulo(
+                            nome,
+                            plugin.colorir(descricao),
+                            expira.toLocalDateTime()
+                    );
+                } else {
+                    // Usa construtor principal com todos os campos
+                    titulo = new Titulo(
+                            nome,
+                            plugin.colorir("&f" + nome),                 // nome visível
+                            plugin.colorir(descricao),                   // descrição
+                            "magnatas.titulos." + nome.toLowerCase(),    // permissão
+                            "Banco",                                     // obtenção
+                            "permanente",                                // duração padrão
+                            false,                                       // loja
+                            0,                                           // preço
+                            nome                                         // nomePermissao
+                    );
+                }
 
                 titulosRegistrados.put(nome.toLowerCase(), titulo);
             }
-
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().warning("Erro ao carregar títulos do banco: " + e.getMessage());
         }
     }
 

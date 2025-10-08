@@ -34,36 +34,35 @@ public class TituloCommandAdmin implements CommandExecutor {
         }
 
         switch (args[0].toLowerCase()) {
-            case "criar":
+            case "criar": {
                 if (args.length < 4) {
                     sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_criar"));
                     return true;
                 }
 
                 String nome = args[1].toLowerCase();
-                String duracaoStr = args[2];
+                String duracaoStr = args[2]; // ex: "permanente", "7d", "1h"
                 String descricao = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
 
-                // Usa o parser de duração
-                long duracaoMillis = TituloConfigLoader.parseDuracao(duracaoStr);
-
-                // Cria título básico (sem loja, preco 0 por padrão)
+                // Constrói título básico (sem loja, preço 0). nomePermissao opcional: usa o próprio nome.
                 Titulo titulo = new Titulo(
                         nome,
-                        plugin.colorir("&f" + nome), // nome visível
-                        plugin.colorir(descricao),
-                        "magnatas.titulos." + nome,
-                        "Manual",
-                        duracaoStr,
-                        false,
-                        0
+                        plugin.colorir("&f" + nome),           // nome visível
+                        plugin.colorir(descricao),             // descrição
+                        "magnatas.titulos." + nome,            // permissao
+                        "Manual",                              // obtencao
+                        duracaoStr,                            // duracao (string original)
+                        false,                                 // loja
+                        0,                                     // preco
+                        nome                                   // nomePermissao (fallback)
                 );
 
                 tituloManager.registrarTitulo(titulo);
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.criado", titulo.getNomeVisivel()));
                 break;
+            }
 
-            case "apagar":
+            case "apagar": {
                 if (args.length < 2) {
                     sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_apagar"));
                     return true;
@@ -76,8 +75,9 @@ public class TituloCommandAdmin implements CommandExecutor {
                 tituloManager.apagarTitulo(nomeApagar);
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.apagado", nomeApagar));
                 break;
+            }
 
-            case "dar":
+            case "dar": {
                 if (args.length < 3) {
                     sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_dar"));
                     return true;
@@ -95,8 +95,9 @@ public class TituloCommandAdmin implements CommandExecutor {
                 tituloManager.darTitulo(uuid, tituloNome);
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.dado", tituloNome, alvo.getName()));
                 break;
+            }
 
-            case "remover":
+            case "remover": {
                 if (args.length < 3) {
                     sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_remover"));
                     return true;
@@ -109,8 +110,9 @@ public class TituloCommandAdmin implements CommandExecutor {
                 tituloManager.removerTitulo(uuidRemover, tituloRemover);
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.removido", tituloRemover, alvoRemover.getName()));
                 break;
+            }
 
-            case "listar":
+            case "listar": {
                 if (args.length < 2) {
                     sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_listar"));
                     return true;
@@ -118,16 +120,19 @@ public class TituloCommandAdmin implements CommandExecutor {
 
                 OfflinePlayer alvoListar = Bukkit.getOfflinePlayer(args[1]);
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.listando", alvoListar.getName()));
+
                 for (String t : tituloManager.getTitulosDoJogador(alvoListar.getUniqueId())) {
                     Titulo tObj = tituloManager.getTituloPorNome(t);
                     String nomeFormatado = tObj != null ? tObj.getNomeVisivel() : t;
                     sender.sendMessage("  §7- " + nomeFormatado);
                 }
                 break;
+            }
 
-            default:
+            default: {
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.subcomando_invalido"));
                 break;
+            }
         }
 
         return true;
