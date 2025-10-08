@@ -1,5 +1,5 @@
 name: Magnatas
-version: '2.1.9'
+version: '2.2.1'
 main: br.com.magnatasoriginal.magnatas.Magnatas
 api-version: '1.21'
 authors: [ GnomoMuitoLouco ]
@@ -102,19 +102,6 @@ commands:
     permission: magnatas.admin.token.ver
     default: op
 
-  # 🏷️ Sistema de Títulos
-  titulos:
-    description: Abre o menu de títulos do jogador
-    usage: /titulos
-    permission: magnatas.titulos
-    default: true
-
-  titulosadmin:
-    description: Comandos administrativos de títulos
-    usage: /titulosadmin <criar|dar|remover|listar>
-    permission: titulos.admin
-    default: op
-
 permissions:
   # Permissões de Limites
   magnatas.limites:
@@ -204,7 +191,7 @@ permissions:
     description: Permissão para abrir o menu de títulos
     default: true
 
-  titulos.admin:
+  magnatas.titulos.admin:
     description: Permissão para administrar títulos
     default: op
 

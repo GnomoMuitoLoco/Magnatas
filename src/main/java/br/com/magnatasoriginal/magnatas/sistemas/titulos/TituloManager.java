@@ -81,6 +81,17 @@ public class TituloManager {
         }
     }
 
+    public void apagarTitulo(String nome) {
+        titulosRegistrados.remove(nome.toLowerCase());
+        try (Connection conn = sqlite.openConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM titulos WHERE nome = ?")) {
+            ps.setString(1, nome);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void carregarTitulos() {
         try (Connection conn = sqlite.openConnection();
              Statement stmt = conn.createStatement();

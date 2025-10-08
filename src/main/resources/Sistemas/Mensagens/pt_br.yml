@@ -34,6 +34,8 @@ ajuda:
 
 titulos:
   admin:
+    uso_apagar: "&cUso: /magnatas títulosadmin apagar <nome>"
+    apagado: "&eTítulo %1 apagado com sucesso."
     sem_permissao: "&cVocê não tem permissão para usar este comando."
     uso_geral: "&eUso: /magnatas títulos admin <criar|dar|remover|listar>"
     uso_criar: "&cUso: /magnatas títulos admin criar <nome> <duração> <descrição>"

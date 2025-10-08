@@ -58,6 +58,20 @@ public class TituloCommandAdmin implements CommandExecutor {
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.criado", titulo.getNomeVisivel()));
                 break;
 
+            case "apagar":
+                if (args.length < 2) {
+                    sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_apagar"));
+                    return true;
+                }
+                String nomeApagar = args[1].toLowerCase();
+                if (tituloManager.getTituloPorNome(nomeApagar) == null) {
+                    sender.sendMessage(plugin.getMensagens().get("titulos.titulo_inexistente"));
+                    return true;
+                }
+                tituloManager.apagarTitulo(nomeApagar);
+                sender.sendMessage(plugin.getMensagens().get("titulos.admin.apagado", nomeApagar));
+                break;
+
             case "dar":
                 if (args.length < 3) {
                     sender.sendMessage(plugin.getMensagens().get("titulos.admin.uso_dar"));

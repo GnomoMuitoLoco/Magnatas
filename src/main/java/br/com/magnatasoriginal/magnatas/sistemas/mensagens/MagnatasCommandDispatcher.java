@@ -23,15 +23,17 @@ public class MagnatasCommandDispatcher implements CommandExecutor {
         subcomandos.put("info", new InfoCommand());
         subcomandos.put("ajuda", new AjudaCommand(mensagens));
         subcomandos.put("reload", new ReloadCommand(plugin, mensagens, tarefaAjuda));
-        subcomandos.put("títulos", new TituloCommand((Magnatas) plugin, tituloManager));
         subcomandos.put("títulosadmin", new TituloCommandAdmin((Magnatas) plugin, tituloManager));
+        subcomandos.put("titulosadmin", new TituloCommandAdmin((Magnatas) plugin, tituloManager));
+        subcomandos.put("titulos", new TituloCommand((Magnatas) plugin, tituloManager));      // sem acento
+        subcomandos.put("títulos", new TituloCommand((Magnatas) plugin, tituloManager));     // com acento
         // você pode adicionar outros aqui: wiki, discord, etc.
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("§eUse /magnatas <info|ajuda|títulos>");
+            sender.sendMessage("§eUse o comando /magnatas info.");
             return true;
         }
 
@@ -40,7 +42,7 @@ public class MagnatasCommandDispatcher implements CommandExecutor {
             return executor.onCommand(sender, cmd, label, Arrays.copyOfRange(args, 1, args.length));
         }
 
-        sender.sendMessage("§cSubcomando desconhecido. Use /magnatas <info>.");
+        sender.sendMessage("§cSubcomando desconhecido. Use /magnatas info.");
         return true;
     }
 }

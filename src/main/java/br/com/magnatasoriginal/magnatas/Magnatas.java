@@ -58,6 +58,10 @@ public final class Magnatas extends JavaPlugin {
         saveDefaultConfig();
         config = getConfig(); // config.yml em /resources/
 
+        new File(getDataFolder(), "Sistemas/Titulos").mkdirs();
+        saveResource("Sistemas/Titulos/titulos.yml", false);
+        File configFile = new File(getDataFolder(), "Sistemas/Titulos/titulos.yml");
+
         // 💬 Carrega mensagens localizadas
         String caminhoMensagens = "Sistemas/Mensagens/pt_br.yml";
         saveResource(caminhoMensagens, false);
@@ -94,6 +98,7 @@ public final class Magnatas extends JavaPlugin {
 
         // 📜 Comando de mensagens
         getCommand("magnatas").setExecutor(new MagnatasCommandDispatcher(this, mensagens, tarefaAjuda, tituloManager));
+
 
         // 📜 Comandos de lojas, homes e warps
         Objects.requireNonNull(getCommand("setwarp")).setExecutor(new SetWarpCommand(this));
