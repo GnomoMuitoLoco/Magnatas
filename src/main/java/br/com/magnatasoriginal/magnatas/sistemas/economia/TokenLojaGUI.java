@@ -19,11 +19,11 @@ import br.com.magnatasoriginal.magnatas.sistemas.titulos.lojadetitulos.LojadeTit
 public class TokenLojaGUI implements Listener {
 
     private final Magnatas plugin;
-    private final LojadeTitulos lojaDeTitulos;
+    private final LojadeTitulos lojadeTitulos;
 
-    public TokenLojaGUI(Magnatas plugin) {
+    public TokenLojaGUI(Magnatas plugin, LojadeTitulos lojadeTitulos) {
         this.plugin = plugin;
-        this.lojaDeTitulos = new LojadeTitulos(plugin); // ✅ instanciando a loja
+        this.lojadeTitulos = lojadeTitulos;
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -68,7 +68,7 @@ public class TokenLojaGUI implements Listener {
         if (type == Material.NAME_TAG) {
             player.closeInventory();
             player.sendMessage(ChatColor.YELLOW + "Abrindo loja de Títulos...");
-            lojaDeTitulos.abrirLoja(player); // ✅ chama a GUI da loja de títulos
+            lojadeTitulos.abrirLoja(player); // ✅ chama a GUI da loja de títulos
         } else if (type == Material.DIAMOND_CHESTPLATE) {
             player.closeInventory();
             player.sendMessage(ChatColor.AQUA + "Abrindo loja de Cosméticos...");

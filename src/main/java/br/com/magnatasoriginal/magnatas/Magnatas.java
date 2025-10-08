@@ -13,6 +13,7 @@ import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MagnatasCommandDispat
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemChaves;
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemProvider;
 import br.com.magnatasoriginal.magnatas.sistemas.titulos.*;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.lojadetitulos.LojadeTitulos;
 import br.com.magnatasoriginal.magnatas.sistemas.warps.*;
 
 import org.bukkit.Location;
@@ -42,6 +43,8 @@ public final class Magnatas extends JavaPlugin {
     private Tokens tokens;
     private File titulosAtivosFile;
     private FileConfiguration titulosAtivosConfig;
+    private LojadeTitulos lojadeTitulos;
+    private TokenLojaGUI tokenLojaGUI;
 
 
     @Override
@@ -87,7 +90,6 @@ public final class Magnatas extends JavaPlugin {
         mensagens = new MensagemProvider(mensagensConfig);
         verificarMensagens(mensagens);
 
-
         // 📢 Tarefa de ajuda automática
         int intervaloAjuda = config.getInt("ajuda_convite_intervalo", 300);
         BukkitTask tarefaAjuda = new AjudaAnuncioTask(this, mensagens)
@@ -100,14 +102,14 @@ public final class Magnatas extends JavaPlugin {
 
         // 💰 Inicializa o sistema de Tokens
         this.tokens = new Tokens(this);
+        this.lojadeTitulos = new LojadeTitulos(this); // cria e registra só uma vez
+        this.tokenLojaGUI = new TokenLojaGUI(this, lojadeTitulos);
 
-        // 🏷️ Inicializa o sistema de Títulos
+    // 🏷️ Inicializa o sistema de Títulos
         tituloManager = new TituloManager(this, sqliteManager);
         new MagnatasTitulosExpansion(this, tituloManager, tokens).register();
+        new TituloGUI(this); // Listener da interface de títulos (registra cliques)
 
-        // Registrar GUIs
-        new TituloGUI(this); // Listener da interface de títulos
-        new TokenLojaGUI(this); // Listener da loja de tokens (com botão para títulos)
 
         // 📜 Comandos de limites
         getCommand("limite").setExecutor(new LimiteCommand(limitesManager, this));
@@ -172,6 +174,14 @@ public final class Magnatas extends JavaPlugin {
         getLogger().info("Plugin Magnatas Desativado!");
     }
     //Getters para os gerenciadores
+    public TokenLojaGUI getTokenLojaGUI() {
+        return tokenLojaGUI;
+    }
+
+    public LojadeTitulos getLojaDeTitulos() {
+        return lojadeTitulos;
+    }
+
     public FileConfiguration getTitulosAtivosConfig() {
         return titulosAtivosConfig;
     }
