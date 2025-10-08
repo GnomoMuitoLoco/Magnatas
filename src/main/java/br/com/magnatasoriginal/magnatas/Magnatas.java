@@ -88,16 +88,12 @@ public final class Magnatas extends JavaPlugin {
         new TituloGUI(this); // Listener da interface de títulos
         new TokenLojaGUI(this); // Listener da loja de tokens (com botão para títulos)
 
-        // 📜 Comandos de Títulos
-        Objects.requireNonNull(getCommand("titulos")).setExecutor(new TituloCommand(this, tituloManager));
-        Objects.requireNonNull(getCommand("titulosadmin")).setExecutor(new TituloCommandAdmin(this, tituloManager));
-
         // 📜 Comandos de limites
         getCommand("limite").setExecutor(new LimiteCommand(limitesManager, this));
         getCommand("limites").setExecutor(new LimitesCommand(limitesManager, this));
 
         // 📜 Comando de mensagens
-        getCommand("magnatas").setExecutor(new MagnatasCommandDispatcher(this, mensagens, tarefaAjuda));
+        getCommand("magnatas").setExecutor(new MagnatasCommandDispatcher(this, mensagens, tarefaAjuda, tituloManager));
 
         // 📜 Comandos de lojas, homes e warps
         Objects.requireNonNull(getCommand("setwarp")).setExecutor(new SetWarpCommand(this));
@@ -124,6 +120,8 @@ public final class Magnatas extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
         getServer().getPluginManager().registerEvents(new TituloGUIListener(this), this);
+        getServer().getPluginManager().registerEvents(new TituloGUI(this), this);
+
 
         // ✅ Log de inicialização
         getLogger().info("Sistema de Lojas Ativado!");

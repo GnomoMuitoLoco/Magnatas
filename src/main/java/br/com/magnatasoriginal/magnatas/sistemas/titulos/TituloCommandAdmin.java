@@ -22,7 +22,7 @@ public class TituloCommandAdmin implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if (!sender.hasPermission("magnatas.titulos.admin")) {
+        if (!sender.hasPermission("magnatas.admin.titulos")) {
             sender.sendMessage(plugin.getMensagens().get("titulos.admin.sem_permissao"));
             return true;
         }

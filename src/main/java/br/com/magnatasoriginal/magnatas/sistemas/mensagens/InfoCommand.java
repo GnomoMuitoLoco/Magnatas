@@ -46,9 +46,15 @@ public class InfoCommand implements CommandExecutor {
         token.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                 new ComponentBuilder("§7Clique para abrir o sistema de tokens").create()));
 
-        TextComponent limite = new TextComponent("\n§c• Limite de blocos (em construção)");
-        limite.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                new ComponentBuilder("§7Em breve...").create()));
+        TextComponent limites = new TextComponent("\n§c• Limite de blocos");
+        limites.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/limites"));
+        limites.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                new ComponentBuilder("§7Clique para verificar o limite de blocos por chunk").create()));
+
+        TextComponent titulos = new TextComponent("\n§9• Sistema de Títulos");
+        titulos.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/magnatas títulos"));
+        titulos.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                new ComponentBuilder("§7Clique para abrir o menu de títulos que você conquistou").create()));
 
         TextComponent todos = new TextComponent();
         todos.addExtra(wiki);
@@ -56,11 +62,11 @@ public class InfoCommand implements CommandExecutor {
         todos.addExtra(site);
         todos.addExtra(ajuda);
         todos.addExtra(token);
-        todos.addExtra(limite);
+        todos.addExtra(limites);
+        todos.addExtra(titulos);
 
         player.spigot().sendMessage(todos);
         player.sendMessage("§8===========================================");
-        // Rodapé
         player.sendMessage("§7by Magnatas");
         return true;
     }
