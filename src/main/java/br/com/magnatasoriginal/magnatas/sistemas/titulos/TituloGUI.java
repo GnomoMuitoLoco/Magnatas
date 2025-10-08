@@ -22,7 +22,6 @@ public class TituloGUI implements Listener {
     public TituloGUI(Magnatas plugin) {
         this.plugin = plugin;
         this.tituloMenu = new TituloMenu();
-        Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
     /**

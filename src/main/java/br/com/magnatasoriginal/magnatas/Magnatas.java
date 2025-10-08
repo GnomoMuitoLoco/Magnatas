@@ -1,5 +1,6 @@
 package br.com.magnatasoriginal.magnatas;
 
+import br.com.magnatasoriginal.magnatas.listeners.TituloGUIListener;
 import br.com.magnatasoriginal.magnatas.sistemas.antilag.limites.*;
 import br.com.magnatasoriginal.magnatas.sistemas.homes.*;
 import br.com.magnatasoriginal.magnatas.sistemas.lojas.*;
@@ -121,6 +122,7 @@ public final class Magnatas extends JavaPlugin {
 
 
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
+        getServer().getPluginManager().registerEvents(new TituloGUIListener(this), this);
 
         // ✅ Log de inicialização
         getLogger().info("Sistema de Lojas Ativado!");
