@@ -8,6 +8,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 
 import java.util.Arrays;
+import java.util.UUID;
 
 public class TituloCommandAdmin implements CommandExecutor {
 
@@ -39,19 +40,23 @@ public class TituloCommandAdmin implements CommandExecutor {
                     return true;
                 }
 
-                String nome = args[1];
+                String nome = args[1].toLowerCase();
                 String duracaoStr = args[2];
                 String descricao = String.join(" ", Arrays.copyOfRange(args, 3, args.length));
 
+                // Usa o parser de duração
                 long duracaoMillis = TituloConfigLoader.parseDuracao(duracaoStr);
+
+                // Cria título básico (sem loja, preco 0 por padrão)
                 Titulo titulo = new Titulo(
                         nome,
-                        plugin.colorir(nome),
+                        plugin.colorir("&f" + nome), // nome visível
                         plugin.colorir(descricao),
-                        "magnatas.titulos." + nome.toLowerCase(),
-                        nome.toLowerCase(),
+                        "magnatas.titulos." + nome,
                         "Manual",
-                        duracaoMillis
+                        duracaoStr,
+                        false,
+                        0
                 );
 
                 tituloManager.registrarTitulo(titulo);
@@ -79,14 +84,15 @@ public class TituloCommandAdmin implements CommandExecutor {
                 }
 
                 OfflinePlayer alvo = Bukkit.getOfflinePlayer(args[1]);
-                String tituloNome = args[2];
+                UUID uuid = alvo.getUniqueId();
+                String tituloNome = args[2].toLowerCase();
 
                 if (tituloManager.getTituloPorNome(tituloNome) == null) {
                     sender.sendMessage(plugin.getMensagens().get("titulos.titulo_inexistente"));
                     return true;
                 }
 
-                tituloManager.darTitulo(alvo.getPlayer(), tituloNome);
+                tituloManager.darTitulo(uuid, tituloNome);
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.dado", tituloNome, alvo.getName()));
                 break;
 
@@ -97,9 +103,10 @@ public class TituloCommandAdmin implements CommandExecutor {
                 }
 
                 OfflinePlayer alvoRemover = Bukkit.getOfflinePlayer(args[1]);
-                String tituloRemover = args[2];
+                UUID uuidRemover = alvoRemover.getUniqueId();
+                String tituloRemover = args[2].toLowerCase();
 
-                tituloManager.getTitulosDoJogador(alvoRemover.getPlayer()).remove(tituloRemover.toLowerCase());
+                tituloManager.removerTitulo(uuidRemover, tituloRemover);
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.removido", tituloRemover, alvoRemover.getName()));
                 break;
 
@@ -111,7 +118,7 @@ public class TituloCommandAdmin implements CommandExecutor {
 
                 OfflinePlayer alvoListar = Bukkit.getOfflinePlayer(args[1]);
                 sender.sendMessage(plugin.getMensagens().get("titulos.admin.listando", alvoListar.getName()));
-                for (String t : tituloManager.getTitulosDoJogador(alvoListar.getPlayer())) {
+                for (String t : tituloManager.getTitulosDoJogador(alvoListar.getUniqueId())) {
                     Titulo tObj = tituloManager.getTituloPorNome(t);
                     String nomeFormatado = tObj != null ? tObj.getNomeVisivel() : t;
                     sender.sendMessage("  §7- " + nomeFormatado);

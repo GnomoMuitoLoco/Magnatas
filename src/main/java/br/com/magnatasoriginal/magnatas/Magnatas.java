@@ -39,6 +39,10 @@ public final class Magnatas extends JavaPlugin {
     private MensagemProvider mensagens;
     private LimitesManager limitesManager;
     private TituloManager tituloManager;
+    private Tokens tokens;
+    private File titulosAtivosFile;
+    private FileConfiguration titulosAtivosConfig;
+
 
     @Override
     public void onEnable() {
@@ -58,9 +62,22 @@ public final class Magnatas extends JavaPlugin {
         saveDefaultConfig();
         config = getConfig(); // config.yml em /resources/
 
+        // 📁 Garante pastas e arquivos necessários
+
         new File(getDataFolder(), "Sistemas/Titulos").mkdirs();
         saveResource("Sistemas/Titulos/titulos.yml", false);
         File configFile = new File(getDataFolder(), "Sistemas/Titulos/titulos.yml");
+
+        File titulosAtivosFile = new File(getDataFolder(), "Sistemas/Titulos/titulos_ativos.yml");
+        if (!titulosAtivosFile.exists()) {
+            try {
+                titulosAtivosFile.getParentFile().mkdirs();
+                titulosAtivosFile.createNewFile();
+            } catch (Exception e) {
+                getLogger().log(Level.WARNING, "Erro ao criar titulos_ativos.yml", e);
+            }
+        }
+        titulosAtivosConfig = YamlConfiguration.loadConfiguration(titulosAtivosFile);
 
         // 💬 Carrega mensagens localizadas
         String caminhoMensagens = "Sistemas/Mensagens/pt_br.yml";
@@ -82,7 +99,7 @@ public final class Magnatas extends JavaPlugin {
         new LimitesBlockListener(limitesManager, this);
 
         // 💰 Inicializa o sistema de Tokens
-        Tokens tokens = new Tokens(this);
+        this.tokens = new Tokens(this);
 
         // 🏷️ Inicializa o sistema de Títulos
         tituloManager = new TituloManager(this, sqliteManager);
@@ -153,6 +170,22 @@ public final class Magnatas extends JavaPlugin {
     @Override
     public void onDisable() {
         getLogger().info("Plugin Magnatas Desativado!");
+    }
+    //Getters para os gerenciadores
+    public FileConfiguration getTitulosAtivosConfig() {
+        return titulosAtivosConfig;
+    }
+
+    public void salvarTitulosAtivos() {
+        try {
+            titulosAtivosConfig.save(titulosAtivosFile);
+        } catch (Exception e) {
+            getLogger().log(Level.WARNING, "Erro ao salvar titulos_ativos.yml", e);
+        }
+    }
+
+    public Tokens getTokens() {
+        return tokens;
     }
 
     public TituloManager getTituloManager() {

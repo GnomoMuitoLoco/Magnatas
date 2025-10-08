@@ -24,8 +24,13 @@ public class TituloConfigLoader {
             String obtencao = config.getString(id + ".obtencao", "Desconhecida");
             String permissao = config.getString(id + ".permissao", "");
             String nomePermissao = config.getString(id + ".nome_permissao", id);
-            String duracaoStr = config.getString(id + ".duracao", "permanente");
 
+            // Novos campos
+            boolean loja = config.getBoolean(id + ".loja", true);
+            int preco = config.getInt(id + ".preco", 0);
+
+            // Duração (se precisar usar em outro lugar)
+            String duracaoStr = config.getString(id + ".duracao", "permanente");
             long duracaoMillis = parseDuracao(duracaoStr);
 
             Titulo titulo = new Titulo(
@@ -35,7 +40,8 @@ public class TituloConfigLoader {
                     permissao,
                     nomePermissao,
                     obtencao,
-                    duracaoMillis
+                    loja,
+                    preco
             );
 
             titulos.put(id.toLowerCase(), titulo);

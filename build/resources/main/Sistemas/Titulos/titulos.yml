@@ -1,15 +1,18 @@
 dragao:
   nome_visivel: "&cDragão"
-  duracao: "1d"
-  descricao: "&7Título obtido por bravura em eventos de fogo."
-  nome_permissao: "dragao"
+  descricao: "&7Título lendário de fogo"
+  obtencao: "Loja"
   permissao: "magnatas.titulos.dragao"
-  obtencao: "Eventos"
+  loja: true
+  preco: 500
+  duracao: "permanente"   # ou "permanente"
 
-guerreiro:
-  nome_visivel: "&6Guerreiro"
-  duracao: "permanente"
-  descricao: "&7Título disponível na loja de tokens."
-  nome_permissao: "guerreiro"
-  permissao: "magnatas.titulos.guerreiro"
-  obtencao: "Loja de tokens"
+Peidante:
+  nome_visivel: "&ePeidão"
+  descricao: "&7Peidos de fogo sufocante"
+  obtencao: "Eventos"
+  permissao: "magnatas.titulos.dragao"
+  nome_permissao: "peidao"
+  loja: true
+  preco: 0
+  duracao: "7d"   # opcional, se quiser usar duração

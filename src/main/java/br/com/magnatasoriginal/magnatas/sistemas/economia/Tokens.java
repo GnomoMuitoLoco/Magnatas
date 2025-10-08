@@ -246,6 +246,19 @@ public class Tokens {
         }.runTaskAsynchronously(magnatas);
     }
 
+    public int getTokenCount(String uuid) {
+        try (Connection conn = magnatas.getSQLiteManager().openConnection()) {
+            PreparedStatement stmt = conn.prepareStatement("SELECT tokenCount FROM tokens WHERE uuid = ?");
+            stmt.setString(1, uuid);
+            ResultSet rs = stmt.executeQuery();
+
+            return rs.next() ? rs.getInt("tokenCount") : 0;
+        } catch (SQLException e) {
+            magnatas.getLogger().log(Level.SEVERE, "Erro ao consultar Tokens de " + uuid, e);
+            return 0;
+        }
+    }
+
     private void send(Player player, String msg) {
         player.sendMessage(ChatColor.translateAlternateColorCodes('&', msg));
     }

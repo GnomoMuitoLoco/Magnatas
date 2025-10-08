@@ -14,19 +14,22 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Arrays;
 
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.lojadetitulos.LojadeTitulos;
+
 public class TokenLojaGUI implements Listener {
 
     private final Magnatas plugin;
+    private final LojadeTitulos lojaDeTitulos;
 
     public TokenLojaGUI(Magnatas plugin) {
         this.plugin = plugin;
+        this.lojaDeTitulos = new LojadeTitulos(plugin); // ✅ instanciando a loja
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
     public void openMenu(Player player) {
         Inventory inv = Bukkit.createInventory(null, 27, ChatColor.DARK_GREEN + "Loja de Tokens");
 
-        // Slots centrais da linha do meio: 11, 13, 15
         inv.setItem(11, createIcon(Material.NAME_TAG, ChatColor.GOLD + "Títulos",
                 "Compre e equipe títulos exclusivos usando tokens."));
         inv.setItem(13, createIcon(Material.DIAMOND_CHESTPLATE, ChatColor.AQUA + "Cosméticos",
@@ -50,27 +53,28 @@ public class TokenLojaGUI implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (event.getView().getTitle().equals(ChatColor.DARK_GREEN + "Loja de Tokens")) {
-            event.setCancelled(true);
-            if (event.getCurrentItem() == null) return;
+        if (!event.getView().getTitle().equals(ChatColor.DARK_GREEN + "Loja de Tokens")) return;
 
-            Player player = (Player) event.getWhoClicked();
-            Material type = event.getCurrentItem().getType();
+        event.setCancelled(true);
 
-            if (type == Material.NAME_TAG) {
-                player.closeInventory();
-                player.sendMessage(ChatColor.YELLOW + "Abrindo loja de Títulos...");
-                // Aqui você chama o GUI de títulos
-                // plugin.getTituloGUI().openMenu(player);
-            } else if (type == Material.DIAMOND_CHESTPLATE) {
-                player.closeInventory();
-                player.sendMessage(ChatColor.AQUA + "Abrindo loja de Cosméticos...");
-                // Aqui você chama o GUI de cosméticos
-            } else if (type == Material.NETHER_STAR) {
-                player.closeInventory();
-                player.sendMessage(ChatColor.LIGHT_PURPLE + "Abrindo loja de Recompensas Sazonais...");
-                // Aqui você chama o GUI de recompensas sazonais
-            }
+        ItemStack item = event.getCurrentItem();
+        if (item == null || item.getType() == Material.AIR || !item.hasItemMeta()) return;
+
+        Player player = (Player) event.getWhoClicked();
+        Material type = item.getType();
+
+        if (event.getClickedInventory() == null || !event.getClickedInventory().equals(event.getView().getTopInventory())) return;
+
+        if (type == Material.NAME_TAG) {
+            player.closeInventory();
+            player.sendMessage(ChatColor.YELLOW + "Abrindo loja de Títulos...");
+            lojaDeTitulos.abrirLoja(player); // ✅ chama a GUI da loja de títulos
+        } else if (type == Material.DIAMOND_CHESTPLATE) {
+            player.closeInventory();
+            player.sendMessage(ChatColor.AQUA + "Abrindo loja de Cosméticos...");
+        } else if (type == Material.NETHER_STAR) {
+            player.closeInventory();
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "Abrindo loja de Recompensas Sazonais...");
         }
     }
 }
