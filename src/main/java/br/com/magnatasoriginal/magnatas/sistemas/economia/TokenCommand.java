@@ -66,7 +66,7 @@ public class TokenCommand implements CommandExecutor {
                 tokens.getTokenInfo(player);
                 break;
             case "loja":
-                player.sendMessage("§eSistema de loja de Tokens em desenvolvimento...");
+                new TokenLojaGUI(plugin).openMenu(player);
                 break;
             case "top":
                 tokens.showTokenTop(player);

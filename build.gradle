@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'br.com.magnatasoriginal'
-version = '2.1.6'
+version = '2.1.9'
 
 repositories {
     mavenCentral()
@@ -12,11 +12,31 @@ repositories {
         name = "spigotmc-repo"
         url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
     }
+    // Repositório oficial do Spigot
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+
+    // Repositório do PlaceholderAPI
+    maven { url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/' }
+
+    // Jitpack (para VaultAPI)
+    maven { url = 'https://jitpack.io' }
 }
+
+
 
 dependencies {
     compileOnly("org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT")
+    //ProtocolLib
+    // Spigot API (ajuste a versão para a que você usa no servidor)
+    compileOnly 'org.spigotmc:spigot-api:1.21.1-R0.1-SNAPSHOT'
+
+    // PlaceholderAPI
+    compileOnly 'me.clip:placeholderapi:2.11.6'
+
+    // VaultAPI
+    compileOnly 'com.github.MilkBowl:VaultAPI:1.7'
 }
+
 
 tasks {
     runServer {

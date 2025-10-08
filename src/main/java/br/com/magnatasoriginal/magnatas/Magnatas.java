@@ -11,10 +11,9 @@ import br.com.magnatasoriginal.magnatas.sistemas.mensagens.AjudaAnuncioTask;
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MagnatasCommandDispatcher;
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemChaves;
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemProvider;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.*;
 import br.com.magnatasoriginal.magnatas.sistemas.warps.*;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -38,6 +37,7 @@ public final class Magnatas extends JavaPlugin {
     private WarpManager warpManager;
     private MensagemProvider mensagens;
     private LimitesManager limitesManager;
+    private TituloManager tituloManager;
 
     @Override
     public void onEnable() {
@@ -77,6 +77,18 @@ public final class Magnatas extends JavaPlugin {
 
         // 💰 Inicializa o sistema de Tokens
         Tokens tokens = new Tokens(this);
+
+        // 🏷️ Inicializa o sistema de Títulos
+        tituloManager = new TituloManager(this, sqliteManager);
+        new MagnatasTitulosExpansion(this, tituloManager, tokens).register();
+
+        // Registrar GUIs
+        new TituloGUI(this); // Listener da interface de títulos
+        new TokenLojaGUI(this); // Listener da loja de tokens (com botão para títulos)
+
+        // 📜 Comandos de Títulos
+        Objects.requireNonNull(getCommand("titulos")).setExecutor(new TituloCommand(this, tituloManager));
+        Objects.requireNonNull(getCommand("titulosadmin")).setExecutor(new TituloCommandAdmin(this, tituloManager));
 
         // 📜 Comandos de limites
         getCommand("limite").setExecutor(new LimiteCommand(limitesManager, this));
@@ -135,6 +147,10 @@ public final class Magnatas extends JavaPlugin {
     @Override
     public void onDisable() {
         getLogger().info("Plugin Magnatas Desativado!");
+    }
+
+    public TituloManager getTituloManager() {
+        return tituloManager;
     }
 
     public LimitesManager getLimitesManager() {

@@ -7,9 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Level;
 
 public class Tokens {
@@ -18,6 +16,30 @@ public class Tokens {
 
     public Tokens(Magnatas plugin) {
         this.magnatas = plugin;
+    }
+
+    // Retorna um mapa com todos os saldos de tokens por UUID
+    public Map<UUID, Integer> getAllTokens() {
+        Map<UUID, Integer> resultado = new HashMap<>();
+        try (Connection conn = magnatas.getSQLiteManager().openConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT uuid, tokenCount FROM tokens")) {
+
+            while (rs.next()) {
+                String uuidStr = rs.getString("uuid");
+                int count = rs.getInt("tokenCount");
+                try {
+                    UUID uuid = UUID.fromString(uuidStr);
+                    resultado.put(uuid, count);
+                } catch (IllegalArgumentException ignored) {
+                    // ignora registros com UUID inválido
+                }
+            }
+        } catch (SQLException e) {
+            magnatas.getLogger().warning("Erro ao carregar tokens para ranking:");
+            e.printStackTrace();
+        }
+        return resultado;
     }
 
     public void createTable(Connection conn) throws SQLException {

@@ -1,10 +1,12 @@
 name: Magnatas
-version: '2.1.6'
+version: '2.1.9'
 main: br.com.magnatasoriginal.magnatas.Magnatas
 api-version: '1.21'
 authors: [ GnomoMuitoLouco ]
 description: Magnatas Original
 website: https://www.servidormagnatas.com.br
+depend: [PlaceholderAPI]
+softdepend: [Vault]
 
 commands:
   # 📢 Sistema de Mensagens
@@ -100,6 +102,19 @@ commands:
     permission: magnatas.admin.token.ver
     default: op
 
+  # 🏷️ Sistema de Títulos
+  titulos:
+    description: Abre o menu de títulos do jogador
+    usage: /titulos
+    permission: magnatas.titulos
+    default: true
+
+  titulosadmin:
+    description: Comandos administrativos de títulos
+    usage: /titulosadmin <criar|dar|remover|listar>
+    permission: titulos.admin
+    default: op
+
 permissions:
   # Permissões de Limites
   magnatas.limites:
@@ -117,6 +132,7 @@ permissions:
   magnatas.admin.limites.progresso:
     description: Permissão para visualizar o progresso da varredura distribuída
     default: op
+
   # Permissões de Homes
   magnatas.homes.1:
     description: Permissão para ter 1 home
@@ -181,6 +197,15 @@ permissions:
 
   magnatas.admin.token.ver:
     description: Permissão para ver Tokens de outros jogadores
+    default: op
+
+  # 🏷️ Permissões de Títulos
+  magnatas.titulos:
+    description: Permissão para abrir o menu de títulos
+    default: true
+
+  titulos.admin:
+    description: Permissão para administrar títulos
     default: op
 
   # 📢 Permissões de Mensagens - Ajudante

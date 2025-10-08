@@ -21,6 +21,26 @@ public class SQLiteManager {
     public void initializeDatabase() {
         try (Connection conn = openConnection()) {
             Statement stmt = conn.createStatement();
+            // Tabela de títulos disponíveis no servidor
+            stmt.execute("CREATE TABLE IF NOT EXISTS titulos (" +
+                    "nome TEXT PRIMARY KEY, " +
+                    "descricao TEXT, " +
+                    "tipo TEXT, " +
+                    "expiraEm TEXT)");
+
+            // Títulos conquistados por jogadores
+            stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulos (" +
+                    "uuid TEXT, " +
+                    "titulo_nome TEXT, " +
+                    "PRIMARY KEY (uuid, titulo_nome), " +
+                    "FOREIGN KEY (titulo_nome) REFERENCES titulos(nome))");
+
+            // Título atualmente equipado por jogador
+            stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulo_equipado (" +
+                    "uuid TEXT PRIMARY KEY, " +
+                    "titulo_nome TEXT, " +
+                    "FOREIGN KEY (titulo_nome) REFERENCES titulos(nome))");
+
             //Tabe de Limites
             stmt.execute("CREATE TABLE IF NOT EXISTS limites_blocos (" +
                     "bloco_id TEXT PRIMARY KEY, " +
