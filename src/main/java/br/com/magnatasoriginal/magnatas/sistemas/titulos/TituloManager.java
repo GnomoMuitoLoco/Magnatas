@@ -130,7 +130,34 @@ public class TituloManager {
     }
 
     public Set<String> getTitulosDoJogador(Player player) {
-        return titulosPorJogador.getOrDefault(player.getUniqueId(), Collections.emptySet());
+        Set<String> titulos = new HashSet<>();
+
+        // Títulos salvos no banco
+        Set<String> conquistados = titulosPorJogador.getOrDefault(player.getUniqueId(), new HashSet<>());
+        titulos.addAll(conquistados);
+
+        // Títulos por permissão
+        for (Titulo titulo : titulosRegistrados.values()) {
+            String perm = titulo.getPermissao();
+
+            // Se não exige permissão, é público
+            if (perm == null || perm.isEmpty()) {
+                titulos.add(titulo.getNome());
+                continue;
+            }
+
+            // Se jogador tem permissão, adiciona
+            if (player.hasPermission(perm)) {
+                titulos.add(titulo.getNome());
+            }
+
+            // Se é OP ou tem '*', vê tudo
+            if (player.isOp() || player.hasPermission("*")) {
+                titulos.add(titulo.getNome());
+            }
+        }
+
+        return titulos;
     }
 
     public void equiparTitulo(Player player, String nome) {
@@ -204,8 +231,8 @@ public class TituloManager {
         return Collections.unmodifiableMap(titulosPorJogador);
     }
 
-    public int getQuantidadeTitulos(UUID uuid) {
-        return titulosPorJogador.getOrDefault(uuid, Collections.emptySet()).size();
+    public int getQuantidadeTitulos(Player player) {
+        return getTitulosDoJogador(player).size();
     }
 
     private void carregarTitulosEquipados() {
@@ -222,5 +249,10 @@ public class TituloManager {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public void recarregarTitulos() {
+        titulosRegistrados.clear(); // limpa os títulos atuais
+        carregarTitulos();          // recarrega do arquivo titulos.yml
     }
 }

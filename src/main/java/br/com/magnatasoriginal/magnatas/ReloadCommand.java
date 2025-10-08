@@ -2,6 +2,7 @@ package br.com.magnatasoriginal.magnatas;
 
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.AjudaAnuncioTask;
 import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemProvider;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.TituloManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -13,11 +14,13 @@ public class ReloadCommand implements CommandExecutor {
     private final Plugin plugin;
     private BukkitTask tarefaAjuda;
     private final MensagemProvider mensagens;
+    private final TituloManager tituloManager;
 
-    public ReloadCommand(Plugin plugin, MensagemProvider mensagens , BukkitTask tarefaAjuda) {
+    public ReloadCommand(Plugin plugin, MensagemProvider mensagens, BukkitTask tarefaAjuda, TituloManager tituloManager) {
         this.plugin = plugin;
-        this.tarefaAjuda = tarefaAjuda;
         this.mensagens = mensagens;
+        this.tarefaAjuda = tarefaAjuda;
+        this.tituloManager = tituloManager;
     }
 
     @Override
@@ -26,7 +29,9 @@ public class ReloadCommand implements CommandExecutor {
             sender.sendMessage("§cVocê não tem permissão para executar este comando.");
             return true;
         }
+
         plugin.reloadConfig();
+        tituloManager.recarregarTitulos(); // 🔥 recarrega os títulos
 
         if (tarefaAjuda != null) {
             tarefaAjuda.cancel();

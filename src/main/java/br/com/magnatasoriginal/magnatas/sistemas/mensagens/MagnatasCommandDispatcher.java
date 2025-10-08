@@ -22,7 +22,7 @@ public class MagnatasCommandDispatcher implements CommandExecutor {
     public MagnatasCommandDispatcher(Plugin plugin, MensagemProvider mensagens, BukkitTask tarefaAjuda, TituloManager tituloManager) {
         subcomandos.put("info", new InfoCommand());
         subcomandos.put("ajuda", new AjudaCommand(mensagens));
-        subcomandos.put("reload", new ReloadCommand(plugin, mensagens, tarefaAjuda));
+        subcomandos.put("reload", new ReloadCommand(plugin, mensagens, tarefaAjuda, tituloManager));    // comando de reload));
         subcomandos.put("títulosadmin", new TituloCommandAdmin((Magnatas) plugin, tituloManager));
         subcomandos.put("titulosadmin", new TituloCommandAdmin((Magnatas) plugin, tituloManager));
         subcomandos.put("titulos", new TituloCommand((Magnatas) plugin, tituloManager));      // sem acento
