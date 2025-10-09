@@ -3,16 +3,37 @@ dragao:
   descricao: "&7Título lendário de fogo"
   obtencao: "Loja"
   permissao: "magnatas.titulos.dragao"
+  nome_permissao: "dragao"
   loja: true
   preco: 500
-  duracao: "permanente"   # ou "permanente"
+  duracao: "permanente"
 
-Peidante:
+peidao:
   nome_visivel: "&ePeidão"
   descricao: "&7Peidos de fogo sufocante"
   obtencao: "Eventos"
-  permissao: "magnatas.titulos.dragao"
+  permissao: "magnatas.titulos.peidao"
   nome_permissao: "peidao"
   loja: true
   preco: 0
-  duracao: "7d"   # opcional, se quiser usar duração
+  duracao: "7d"
+
+vip:
+  nome_visivel: "&bVIP"
+  descricao: "&7Título exclusivo para jogadores VIP"
+  obtencao: "Permissão"
+  permissao: "magnatas.titulos.vip"
+  nome_permissao: "vip"
+  loja: false
+  preco: 0
+  duracao: "permanente"
+
+relampago:
+  nome_visivel: "&6Relâmpago"
+  descricao: "&7Título temporário de velocidade"
+  obtencao: "Evento"
+  permissao: "magnatas.titulos.relampago"
+  nome_permissao: "relampago"
+  loja: true
+  preco: 100
+  duracao: "1h"

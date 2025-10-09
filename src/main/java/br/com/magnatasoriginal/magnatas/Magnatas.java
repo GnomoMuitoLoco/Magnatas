@@ -45,6 +45,7 @@ public final class Magnatas extends JavaPlugin {
     private FileConfiguration titulosAtivosConfig;
     private LojadeTitulos lojadeTitulos;
     private TokenLojaGUI tokenLojaGUI;
+    private TituloMenu tituloMenu = new TituloMenu();
 
 
     @Override
@@ -143,7 +144,7 @@ public final class Magnatas extends JavaPlugin {
 
 
         getServer().getPluginManager().registerEvents(new PlayerJoinListener(), this);
-        getServer().getPluginManager().registerEvents(new TituloGUIListener(this), this);
+        getServer().getPluginManager().registerEvents(new TituloGUIListener(this, tituloMenu), this);
         getServer().getPluginManager().registerEvents(new TituloGUI(this), this);
 
 

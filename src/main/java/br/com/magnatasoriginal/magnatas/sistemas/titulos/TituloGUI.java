@@ -4,6 +4,7 @@ import br.com.magnatasoriginal.magnatas.Magnatas;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -11,6 +12,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -56,6 +58,8 @@ public class TituloGUI implements Listener {
         if (meta == null) return;
 
         meta.setDisplayName(titulo.getNomeVisivel());
+        NamespacedKey key = new NamespacedKey(plugin, "titulo_id");
+        meta.getPersistentDataContainer().set(key, PersistentDataType.STRING, titulo.getNome());
 
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + titulo.getDescricao());
@@ -117,8 +121,16 @@ public class TituloGUI implements Listener {
         Material itemType = item.getType();
 
         if (itemType == Material.NAME_TAG) {
-            String tituloNome = ChatColor.stripColor(item.getItemMeta().getDisplayName()).toLowerCase(); // normaliza
-            Titulo titulo = plugin.getTituloManager().getTituloPorNome(tituloNome);
+            ItemMeta meta = item.getItemMeta();
+            NamespacedKey key = new NamespacedKey(plugin, "titulo_id");
+            String tituloId = meta.getPersistentDataContainer().get(key, PersistentDataType.STRING);
+
+            if (tituloId == null) {
+                player.sendMessage(ChatColor.RED + "Esse título não existe mais.");
+                return;
+            }
+
+            Titulo titulo = plugin.getTituloManager().getTituloPorNome(tituloId);
 
             if (titulo == null) {
                 player.sendMessage(ChatColor.RED + "Esse título não existe mais.");

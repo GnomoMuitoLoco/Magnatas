@@ -21,7 +21,7 @@ public class TituloMenu {
     private final ItemStack borderItem;
 
     public TituloMenu() {
-        borderItem = createIcon(Material.GRAY_STAINED_GLASS_PANE, " ");
+        borderItem = createIcon(Material.YELLOW_STAINED_GLASS_PANE, " ");
         previousPageIcon = createIcon(Material.ARROW, "Voltar Página");
         nextPageIcon = createIcon(Material.ARROW, "Avançar Página");
         createPages(1);
