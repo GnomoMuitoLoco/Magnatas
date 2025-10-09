@@ -1,5 +1,5 @@
 name: Magnatas
-version: '2.2.6'
+version: '2.3.3'
 main: br.com.magnatasoriginal.magnatas.Magnatas
 api-version: '1.21'
 authors: [ GnomoMuitoLouco ]
@@ -9,12 +9,13 @@ depend: [PlaceholderAPI]
 softdepend: [Vault]
 
 commands:
-  # 📢 Sistema de Mensagens
+  # Sistema de Mensagens
   magnatas:
     description: Comando principal do plugin Magnatas
-    usage: /magnatas [info|ajuda|reload]
+    usage: /magnatas [info | ajuda | reload]
+    aliases: [mgt, mag, ajuda, info, help]
 
-  # Comandos de Limites
+  # Sistema de Limites
   limite:
     description: Define limite de blocos por chunk
     usage: /limite <add|remover|scan|scanall> [quantidade|raio]
@@ -26,7 +27,7 @@ commands:
     usage: /limites [página]
     default: true
 
-  # 🏠 Sistema de Homes
+  # Sistema de Homes
   sethome:
     description: Define uma home
   home:
@@ -36,7 +37,7 @@ commands:
   delhome:
     description: Remove uma home
 
-  # 🧭 Sistema de Warps
+  # Sistema de Warps
   setwarp:
     description: Define uma warp pública
     usage: /setwarp <nome>
@@ -60,7 +61,7 @@ commands:
     usage: /warps [página]
     default: true
 
-  # 🏪 Sistema de Lojas
+  # Sistema de Lojas de Jogadores
   lojas:
     description: Mostra todas as lojas dos jogadores
   setloja:
@@ -70,14 +71,15 @@ commands:
   tploja:
     description: Teleporta para a loja de um jogador
 
-  # 💰 Sistema de Tokens - Jogador
+  # Sistema de Tokens - Jogador
   token:
     description: Comando principal de Tokens
     usage: /token <receber|info|loja|top>
     permission: magnatas.token
+    aliases: [tokens]
     default: true
 
-  # 💰 Sistema de Tokens - Admin
+  # Sistema de Tokens - Admin
   addtoken:
     description: Adiciona Tokens a um jogador
     usage: /addtoken <nick> <quantidade>
@@ -101,6 +103,17 @@ commands:
     usage: /vertoken <nick>
     permission: magnatas.admin.token.ver
     default: op
+
+  # Sistema de Títulos
+  titulos:
+    description: Abre o menu de títulos do jogador
+    usage: /titulos
+    permission: magnatas.titulos
+
+  titulosadmin:
+    description: Comandos administrativos de títulos
+    usage: /titulosadmin <give|remove|list|reload>
+    permission: magnatas.titulos.admin
 
 permissions:
   # Permissões de Limites
@@ -129,7 +142,7 @@ permissions:
     description: Permissão para ter homes infinitas
     default: op
 
-  # 🧭 Permissões de Warps
+  # Permissões de Warps
   magnatas.admin.setwarp:
     description: Permissão para definir warps públicas
     default: op
@@ -142,7 +155,7 @@ permissions:
     description: Permissão para visualizar e teleportar para warps
     default: true
 
-  # 🏪 Permissões de Lojas
+  # Permissões de Lojas
   magnatas.setloja:
     description: Permissão para definir uma loja
     default: true
@@ -155,17 +168,17 @@ permissions:
     description: Permissão para administrar lojas
     default: op
 
-  # 🧭 Permissões especiais
+  # Permissões especiais
   magnatas.bypasscooldown:
     description: Permissão para ignorar a espera de 5 segundos para teleportar
     default: op
 
-  # 💰 Permissões de Tokens - Jogador
+  # Permissões de Tokens - Jogador
   magnatas.token:
     description: Permissão para usar comandos de Tokens
     default: true
 
-  # 💰 Permissões de Tokens - Admin e VIP
+  # Permissões de Tokens - Admin e VIP
   magnatas.vip.token:
     description: Permissão para receber 2 Tokens diários
     default: op
@@ -186,7 +199,7 @@ permissions:
     description: Permissão para ver Tokens de outros jogadores
     default: op
 
-  # 🏷️ Permissões de Títulos
+  # Permissões de Títulos
   magnatas.titulos:
     description: Permissão para abrir o menu de títulos
     default: true
@@ -195,7 +208,7 @@ permissions:
     description: Permissão para administrar títulos
     default: op
 
-  # 📢 Permissões de Mensagens - Ajudante
+  # Permissões de Mensagens
   magnatas.staff.ajuda:
     description: Permissão para receber mensagens automáticas de ajuda
     default: op

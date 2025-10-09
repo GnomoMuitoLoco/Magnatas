@@ -1,6 +1,8 @@
 package br.com.magnatasoriginal.magnatas.sistemas.economia;
 
 import br.com.magnatasoriginal.magnatas.Magnatas;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.gui.TituloGUIService;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.gui.TituloLojaMenu;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -14,16 +16,14 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Arrays;
 
-import br.com.magnatasoriginal.magnatas.sistemas.titulos.lojadetitulos.LojadeTitulos;
-
 public class TokenLojaGUI implements Listener {
 
     private final Magnatas plugin;
-    private final LojadeTitulos lojadeTitulos;
+    private final TituloGUIService tituloGUIService;
 
-    public TokenLojaGUI(Magnatas plugin, LojadeTitulos lojadeTitulos) {
+    public TokenLojaGUI(Magnatas plugin, TituloGUIService tituloGUIService) {
         this.plugin = plugin;
-        this.lojadeTitulos = lojadeTitulos;
+        this.tituloGUIService = tituloGUIService;
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -68,7 +68,8 @@ public class TokenLojaGUI implements Listener {
         if (type == Material.NAME_TAG) {
             player.closeInventory();
             player.sendMessage(ChatColor.YELLOW + "Abrindo loja de Títulos...");
-            lojadeTitulos.abrirLoja(player); // ✅ chama a GUI da loja de títulos
+            TituloLojaMenu lojaMenu = new TituloLojaMenu(plugin.getTituloManager());
+            player.openInventory(lojaMenu.criarMenu(player));
         } else if (type == Material.DIAMOND_CHESTPLATE) {
             player.closeInventory();
             player.sendMessage(ChatColor.AQUA + "Abrindo loja de Cosméticos...");

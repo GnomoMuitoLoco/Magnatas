@@ -1,45 +1,59 @@
 package br.com.magnatasoriginal.magnatas.sistemas.titulos;
 
 import br.com.magnatasoriginal.magnatas.Magnatas;
-import br.com.magnatasoriginal.magnatas.sistemas.economia.Tokens;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.Titulo;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.TituloService;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import net.milkbowl.vault.economy.Economy;
-import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.RegisteredServiceProvider;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Integração com PlaceholderAPI com foco em:
+ * - Segurança contra NPE e entradas inválidas
+ * - Redução de chamadas repetidas
+ * - Cache leve com TTL para placeholders dinâmicas
+ * - Compatibilidade com futuras versões da API
+ *
+ * Placeholders (prefixo: magnatas):
+ * - %magnatas_titulo_equipado%                 → id do título equipado
+ * - %magnatas_titulo_equipado_nome%            → nome visível do título equipado
+ * - %magnatas_titulo_equipado_descricao%       → descrição do título equipado
+ * - %magnatas_titulos_count%                   → quantidade de títulos do jogador
+ *
+ * Por título (id = nome interno em lowercase):
+ * - %magnatas_titulo_<id>_possui%
+ * - %magnatas_titulo_<id>_expira_em%           → ms restantes (ou -1 se permanente/sem expiração)
+ * - %magnatas_titulo_<id>_expira_em_formatado% → texto amigável (ex.: 2d 3h 10m)
+ */
 public class MagnatasTitulosExpansion extends PlaceholderExpansion {
 
     private final Magnatas plugin;
-    private final TituloManager tituloManager;
-    private final Tokens tokens;
-    private Economy economy;
+    private final TituloService tituloService;
 
-    public MagnatasTitulosExpansion(Magnatas plugin, TituloManager tituloManager, Tokens tokens) {
+    // Cache leve por jogador com TTL curto
+    private final Map<UUID, CacheEntry> cachePorJogador = new ConcurrentHashMap<>();
+
+    // TTL configurável em ms (padrão: 1000ms)
+    private final long ttlMillis;
+
+    public MagnatasTitulosExpansion(Magnatas plugin, TituloService tituloService) {
         this.plugin = plugin;
-        this.tituloManager = tituloManager;
-        this.tokens = tokens;
-
-        if (plugin.getServer().getPluginManager().getPlugin("Vault") != null) {
-            RegisteredServiceProvider<Economy> rsp = plugin.getServer().getServicesManager().getRegistration(Economy.class);
-            if (rsp != null) {
-                economy = rsp.getProvider();
-            }
-        }
+        this.tituloService = tituloService;
+        this.ttlMillis = plugin.getConfig().getLong("placeholders.titulos.ttlMillis", 1000L);
     }
 
     @Override
     public String getIdentifier() {
-        return "magnatastitulos";
+        return "magnatas";
     }
 
     @Override
     public String getAuthor() {
-        return "GnomoMuitoLouco";
+        return "MagnatasOriginal";
     }
 
     @Override
@@ -49,124 +63,149 @@ public class MagnatasTitulosExpansion extends PlaceholderExpansion {
 
     @Override
     public boolean persist() {
-        return true;
+        return true; // mantém registrada entre reloads
     }
 
     @Override
     public boolean canRegister() {
-        return true;
+        return true; // compatibilidade futura
     }
 
     @Override
-    public String onRequest(OfflinePlayer offlinePlayer, String params) {
-        Player player = offlinePlayer != null ? offlinePlayer.getPlayer() : null;
-
-        if (params.equalsIgnoreCase("tag")) {
-            if (player == null) return "";
-            String equipado = tituloManager.getTituloEquipado(player);
-            if (equipado != null) {
-                Titulo titulo = tituloManager.getTituloPorNome(equipado);
-                return titulo != null ? titulo.getNomeVisivel() : "[" + equipado + "]";
-            }
+    public String onRequest(OfflinePlayer player, String params) {
+        // Validações defensivas
+        if (player == null || player.getUniqueId() == null || params == null || params.isEmpty()) {
             return "";
         }
 
-        if (!params.equalsIgnoreCase("duracao") &&
-                !params.equalsIgnoreCase("count") &&
-                !params.startsWith("topcoins") &&
-                !params.startsWith("toptokens") &&
-                !params.startsWith("toptitulos")) {
+        final UUID uuid = player.getUniqueId();
+        final String key = params.toLowerCase(Locale.ROOT).trim();
 
-            if (player == null) return "";
-            String equipado = tituloManager.getTituloEquipado(player);
-            if (equipado != null && equipado.equalsIgnoreCase(params)) {
-                Titulo titulo = tituloManager.getTituloPorNome(params);
-                return titulo != null ? titulo.getNomeVisivel() : "[" + params + "]";
+        // Cache leve com TTL
+        CacheEntry entry = cachePorJogador.compute(uuid, (u, old) -> {
+            if (old == null || old.expirou(ttlMillis)) {
+                return CacheEntry.carregar(uuid, tituloService);
             }
-            return "";
+            return old;
+        });
+
+        switch (key) {
+            case "titulo_equipado":
+                return entry.equipadoId != null ? entry.equipadoId : "";
+            case "titulo_equipado_nome":
+                return entry.equipadoVisivel != null ? entry.equipadoVisivel : "";
+            case "titulo_equipado_descricao":
+                return entry.equipadoDescricao != null ? entry.equipadoDescricao : "";
+            case "titulos_count":
+                return String.valueOf(entry.possuídos.size());
+            default:
+                if (key.startsWith("titulo_")) {
+                    return handlePorTitulo(entry, key);
+                }
+                return "";
+        }
+    }
+
+    private String handlePorTitulo(CacheEntry entry, String key) {
+        // Esperado: titulo_<id>_<campo>
+        int lastUnderscore = key.lastIndexOf('_');
+        if (lastUnderscore <= "titulo_".length()) return "";
+
+        String idNorm = key.substring("titulo_".length(), lastUnderscore).toLowerCase(Locale.ROOT);
+        String campo = key.substring(lastUnderscore + 1);
+
+        switch (campo) {
+            case "possui":
+                return String.valueOf(entry.possuídos.contains(idNorm));
+
+            case "expira_em": {
+                Titulo t = entry.metadados.get(idNorm);
+                if (t == null || t.isPermanente() || t.getExpiraEm().isEmpty()) return "-1";
+                long msRestante = Duration.between(Instant.now(), t.getExpiraEm().get()).toMillis();
+                return String.valueOf(Math.max(msRestante, 0));
+            }
+
+            case "expira_em_formatado": {
+                Titulo t = entry.metadados.get(idNorm);
+                if (t == null || t.isPermanente() || t.getExpiraEm().isEmpty()) return "";
+                long ms = Duration.between(Instant.now(), t.getExpiraEm().get()).toMillis();
+                return formatarDuracao(Math.max(ms, 0));
+            }
+
+            default:
+                return "";
+        }
+    }
+
+    // Utilitário de formatação: ms → "Xd Yh Zm"
+    private static String formatarDuracao(long ms) {
+        long totalSeconds = ms / 1000;
+        long days = totalSeconds / 86400;
+        long hours = (totalSeconds % 86400) / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+
+        StringBuilder sb = new StringBuilder();
+        if (days > 0) sb.append(days).append("d ");
+        if (hours > 0 || days > 0) sb.append(hours).append("h ");
+        sb.append(minutes).append("m");
+        return sb.toString().trim();
+    }
+
+    /**
+     * Entrada de cache por jogador
+     * - Evita NPEs armazenando dados normalizados
+     * - TTL curto para placeholders dinâmicas
+     */
+    private static class CacheEntry {
+        final long carregaEm;
+        final Set<String> possuídos;          // ids em lowercase
+        final Map<String, Titulo> metadados;  // id → Titulo
+        final String equipadoId;
+        final String equipadoVisivel;
+        final String equipadoDescricao;
+
+        CacheEntry(long carregaEm,
+                   Set<String> possuídos,
+                   Map<String, Titulo> metadados,
+                   String equipadoId,
+                   String equipadoVisivel,
+                   String equipadoDescricao) {
+            this.carregaEm = carregaEm;
+            this.possuídos = possuídos;
+            this.metadados = metadados;
+            this.equipadoId = equipadoId;
+            this.equipadoVisivel = equipadoVisivel;
+            this.equipadoDescricao = equipadoDescricao;
         }
 
-        if (params.equalsIgnoreCase("duracao")) {
-            if (player == null) return "";
-            String equipado = tituloManager.getTituloEquipado(player);
-            if (equipado != null) {
-                Titulo titulo = tituloManager.getTituloPorNome(equipado);
-                if (titulo != null) {
-                    if (titulo.isPermanente()) return "Permanente";
-                    if (titulo.getExpiraEm() != null) {
-                        return plugin.formatarDuracao(java.time.Duration.between(java.time.LocalDateTime.now(), titulo.getExpiraEm()).toMillis());
-                    }
-                    return plugin.formatarDuracao(titulo.getDuracaoMillis());
+        boolean expirou(long ttlMillis) {
+            return (System.currentTimeMillis() - carregaEm) >= ttlMillis; // se necessário, ajuste abaixo
+        }
+
+        static CacheEntry carregar(UUID uuid, TituloService service) {
+            long agora = System.currentTimeMillis();
+
+            Set<String> poss = new HashSet<>(service.listarTitulos(uuid));
+            Map<String, Titulo> meta = new HashMap<>();
+            for (String id : poss) {
+                service.getManager().getTituloPorNome(id).ifPresent(t -> meta.put(id.toLowerCase(Locale.ROOT), t));
+            }
+
+            String equipId = null;
+            String equipNome = null;
+            String equipDesc = null;
+
+            Optional<String> equipOpt = service.getTituloEquipado(uuid);
+            if (equipOpt.isPresent()) {
+                equipId = equipOpt.get();
+                Titulo t = meta.get(equipId.toLowerCase(Locale.ROOT));
+                if (t != null) {
+                    equipNome = t.getNomeVisivel();
+                    equipDesc = t.getDescricao();
                 }
             }
-            return "";
-        }
 
-        if (params.equalsIgnoreCase("count")) {
-            if (player == null) return "0";
-            String equipado = tituloManager.getTituloEquipado(player);
-            if (equipado != null) {
-                long count = Bukkit.getOnlinePlayers().stream()
-                        .filter(p -> equipado.equalsIgnoreCase(tituloManager.getTituloEquipado(p)))
-                        .count();
-                return String.valueOf(count);
-            }
-            return "0";
+            return new CacheEntry(agora, poss, meta, equipId, equipNome, equipDesc);
         }
-
-        if (params.startsWith("topcoins")) {
-            if (economy == null) return "";
-            int pos = Integer.parseInt(params.replace("topcoins", ""));
-            return getTopVault(pos);
-        }
-
-        if (params.startsWith("toptokens")) {
-            int pos = Integer.parseInt(params.replace("toptokens", ""));
-            return getTopTokens(pos);
-        }
-
-        if (params.startsWith("toptitulos")) {
-            int pos = Integer.parseInt(params.replace("toptitulos", ""));
-            return getTopTitulos(pos);
-        }
-
-        return null;
-    }
-
-    private String getTopVault(int pos) {
-        List<OfflinePlayer> players = Arrays.asList(Bukkit.getOfflinePlayers());
-        players.sort(Comparator.comparingDouble((OfflinePlayer p) -> economy.getBalance(p)).reversed());
-        if (pos <= players.size()) {
-            OfflinePlayer p = players.get(pos - 1);
-            return p.getName() + " - " + economy.getBalance(p);
-        }
-        return "";
-    }
-
-    private String getTopTokens(int pos) {
-        Map<UUID, Integer> all = tokens.getAllTokens();
-        List<Map.Entry<UUID, Integer>> sorted = all.entrySet().stream()
-                .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
-                .collect(Collectors.toList());
-        if (pos <= sorted.size()) {
-            UUID uuid = sorted.get(pos - 1).getKey();
-            return Bukkit.getOfflinePlayer(uuid).getName() + " - " + sorted.get(pos - 1).getValue();
-        }
-        return "";
-    }
-
-    private String getTopTitulos(int pos) {
-        Map<UUID, Integer> counts = new HashMap<>();
-        for (UUID uuid : tituloManager.getTitulosPorJogador().keySet()) {
-            counts.put(uuid, tituloManager.getTitulosPorJogador().get(uuid).size());
-        }
-        List<Map.Entry<UUID, Integer>> sorted = counts.entrySet().stream()
-                .sorted(Map.Entry.<UUID, Integer>comparingByValue().reversed())
-                .collect(Collectors.toList());
-        if (pos <= sorted.size()) {
-            UUID uuid = sorted.get(pos - 1).getKey();
-            return Bukkit.getOfflinePlayer(uuid).getName() + " - " + sorted.get(pos - 1).getValue();
-        }
-        return "";
     }
 }

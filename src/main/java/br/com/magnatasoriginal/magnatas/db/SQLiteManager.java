@@ -7,95 +7,124 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.Level;
 
 public class SQLiteManager {
     private final JavaPlugin plugin;
+    private final File dbFile;
+    private final String jdbcUrl;
 
     public SQLiteManager(JavaPlugin plugin) {
         this.plugin = plugin;
+        this.dbFile = new File(plugin.getDataFolder(), "sqlite.db");
+        this.jdbcUrl = "jdbc:sqlite:" + dbFile.getAbsolutePath();
+
+        if (!plugin.getDataFolder().exists() && !plugin.getDataFolder().mkdirs()) {
+            plugin.getLogger().warning("Não foi possível criar a pasta de dados do plugin!");
+        }
     }
 
     /**
      * Inicializa o banco de dados e cria as tabelas necessárias.
      */
     public void initializeDatabase() {
-        try (Connection conn = openConnection()) {
-            Statement stmt = conn.createStatement();
+        try (Connection conn = openConnection();
+             Statement stmt = conn.createStatement()) {
+
             // Tabela de títulos disponíveis no servidor
-            stmt.execute("CREATE TABLE IF NOT EXISTS titulos (" +
-                    "nome TEXT PRIMARY KEY, " +
-                    "descricao TEXT, " +
-                    "expira_em INTEGER)");
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS titulos (
+                    nome TEXT PRIMARY KEY,
+                    descricao TEXT,
+                    expira_em INTEGER
+                )
+            """);
 
             // Título atualmente equipado por jogador
-            stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulo_equipado (" +
-                    "uuid TEXT PRIMARY KEY, " +
-                    "titulo_nome TEXT, " +
-                    "FOREIGN KEY (titulo_nome) REFERENCES titulos(nome))");
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS jogador_titulo_equipado (
+                    uuid TEXT PRIMARY KEY,
+                    titulo_nome TEXT,
+                    FOREIGN KEY (titulo_nome) REFERENCES titulos(nome)
+                )
+            """);
 
-            //Tabe de Limites
-            stmt.execute("CREATE TABLE IF NOT EXISTS limites_blocos (" +
-                    "bloco_id TEXT PRIMARY KEY, " +
-                    "quantidade INTEGER)");
+            // Tabela de limites
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS limites_blocos (
+                    bloco_id TEXT PRIMARY KEY,
+                    quantidade INTEGER
+                )
+            """);
 
             // Tabela de warps públicas
-            stmt.execute("CREATE TABLE IF NOT EXISTS warps (" +
-                    "name TEXT PRIMARY KEY, " +
-                    "x REAL, " +
-                    "y REAL, " +
-                    "z REAL, " +
-                    "world TEXT)");
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS warps (
+                    name TEXT PRIMARY KEY,
+                    x REAL,
+                    y REAL,
+                    z REAL,
+                    world TEXT
+                )
+            """);
 
             // Tabela de homes
-            stmt.execute("CREATE TABLE IF NOT EXISTS homes (" +
-                    "uuid TEXT, " +
-                    "name TEXT, " +
-                    "x REAL, " +
-                    "y REAL, " +
-                    "z REAL, " +
-                    "world TEXT)");
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS homes (
+                    uuid TEXT,
+                    name TEXT,
+                    x REAL,
+                    y REAL,
+                    z REAL,
+                    world TEXT
+                )
+            """);
 
-            // Tabela de lojas (agora com displayName)
-            stmt.execute("CREATE TABLE IF NOT EXISTS lojas (" +
-                    "playerName TEXT PRIMARY KEY, " +
-                    "displayName TEXT, " +
-                    "world TEXT, " +
-                    "x REAL, " +
-                    "y REAL, " +
-                    "z REAL, " +
-                    "pitch REAL, " +
-                    "yaw REAL, " +
-                    "visitCount INTEGER DEFAULT 0)");
+            // Tabela de lojas
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS lojas (
+                    playerName TEXT PRIMARY KEY,
+                    displayName TEXT,
+                    world TEXT,
+                    x REAL,
+                    y REAL,
+                    z REAL,
+                    pitch REAL,
+                    yaw REAL,
+                    visitCount INTEGER DEFAULT 0
+                )
+            """);
 
             // Tabela de logs
-            stmt.execute("CREATE TABLE IF NOT EXISTS logs (" +
-                    "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    "playerName TEXT, " +
-                    "lojaOwner TEXT, " +
-                    "timestamp TEXT)");
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    playerName TEXT,
+                    lojaOwner TEXT,
+                    timestamp TEXT
+                )
+            """);
 
             // Tabela de Tokens
-            stmt.execute("CREATE TABLE IF NOT EXISTS tokens (" +
-                    "uuid TEXT PRIMARY KEY, " +
-                    "tokenCount INTEGER DEFAULT 0, " +
-                    "lastClaimed TEXT, " +
-                    "streak INTEGER DEFAULT 0)");
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS tokens (
+                    uuid TEXT PRIMARY KEY,
+                    tokenCount INTEGER DEFAULT 0,
+                    lastClaimed TEXT,
+                    streak INTEGER DEFAULT 0
+                )
+            """);
 
-            stmt.close();
         } catch (SQLException e) {
-            plugin.getLogger().warning("Erro ao inicializar o banco de dados SQLite:");
-            e.printStackTrace();
+            plugin.getLogger().log(Level.SEVERE, "Erro ao inicializar o banco de dados SQLite", e);
         }
     }
 
     /**
      * Abre uma nova conexão com o banco de dados SQLite.
+     * Cada chamada retorna uma conexão independente (sem conexões persistentes).
      */
     public Connection openConnection() throws SQLException {
-        File dbFile = new File(plugin.getDataFolder(), "sqlite.db");
-        if (!plugin.getDataFolder().exists()) {
-            plugin.getDataFolder().mkdirs();
-        }
-        return DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
+        return DriverManager.getConnection(jdbcUrl);
     }
 }

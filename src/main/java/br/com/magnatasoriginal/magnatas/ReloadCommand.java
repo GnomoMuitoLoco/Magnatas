@@ -9,6 +9,8 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.File;
+
 public class ReloadCommand implements CommandExecutor {
 
     private final Plugin plugin;
@@ -31,7 +33,7 @@ public class ReloadCommand implements CommandExecutor {
         }
 
         plugin.reloadConfig();
-        tituloManager.recarregarTitulos(); // 🔥 recarrega os títulos
+        tituloManager.carregarTitulos(new File(plugin.getDataFolder(), "Sistemas/Titulos/titulos.yml"));// 🔥 recarrega os títulos
 
         if (tarefaAjuda != null) {
             tarefaAjuda.cancel();

@@ -1,152 +1,62 @@
 package br.com.magnatasoriginal.magnatas.sistemas.titulos.lojadetitulos;
 
 import br.com.magnatasoriginal.magnatas.Magnatas;
+import br.com.magnatasoriginal.magnatas.sistemas.mensagens.MensagemProvider;
 import br.com.magnatasoriginal.magnatas.sistemas.titulos.Titulo;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Material;
-import org.bukkit.configuration.file.FileConfiguration;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.TituloService;
+import br.com.magnatasoriginal.magnatas.sistemas.economia.Tokens; // seu sistema de Tokens
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Optional;
+import java.util.UUID;
 
-public class LojadeTitulos implements Listener {
+public class LojadeTitulos {
 
     private final Magnatas plugin;
+    private final TituloService service;
+    private final MensagemProvider mensagens;
+    private final Tokens tokens; // integração com o sistema de Tokens
 
-    public LojadeTitulos(Magnatas plugin) {
+    public LojadeTitulos(Magnatas plugin, TituloService service, MensagemProvider mensagens, Tokens tokens) {
         this.plugin = plugin;
-        Bukkit.getPluginManager().registerEvents(this, plugin);
+        this.service = service;
+        this.mensagens = mensagens;
+        this.tokens = tokens;
     }
 
-    public void abrirLoja(Player player) {
-        Inventory loja = Bukkit.createInventory(null, 54, ChatColor.GOLD + "Loja de Títulos");
+    /**
+     * Fluxo de compra de título usando Tokens
+     */
+    public void comprarTitulo(Player player, String tituloNome) {
+        UUID uuid = player.getUniqueId();
 
-        List<Titulo> titulos = new ArrayList<>(plugin.getTituloManager().getTodosTitulos());
-
-        int[] slots = {
-                10, 11, 12, 13, 14, 15, 16,
-                19, 20, 21, 22, 23, 24, 25,
-                28, 29, 30, 31, 32, 33, 34,
-                37, 38, 39, 40, 41, 42, 43
-        };
-
-        int index = 0;
-        for (Titulo titulo : titulos) {
-            if (!titulo.isLoja()) continue; // só mostra se estiver marcado como loja
-            if (index >= slots.length) break;
-
-            ItemStack item = new ItemStack(Material.NAME_TAG);
-            ItemMeta meta = item.getItemMeta();
-            if (meta == null) continue;
-
-            meta.setDisplayName(titulo.getNomeVisivel());
-
-            List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GRAY + titulo.getDescricao());
-            lore.add(ChatColor.AQUA + "Obtenção: " + ChatColor.WHITE + titulo.getObtencao());
-
-            if (titulo.getPreco() <= 0) {
-                lore.add(ChatColor.GREEN + "Preço: " + ChatColor.YELLOW + "Grátis");
-            } else {
-                lore.add(ChatColor.GREEN + "Preço: " + ChatColor.YELLOW + titulo.getPreco() + " tokens");
-            }
-
-            // Sempre mostra a duração
-            if (titulo.isPermanente()) {
-                lore.add(ChatColor.LIGHT_PURPLE + "Duração: Permanente");
-            } else {
-                lore.add(ChatColor.LIGHT_PURPLE + "Duração: " + Magnatas.formatarDuracao(titulo.getDuracaoMillis()));
-            }
-
-            lore.add("");
-            lore.add(ChatColor.GREEN + "Clique para comprar");
-
-            meta.setLore(lore);
-            item.setItemMeta(meta);
-
-            loja.setItem(slots[index], item);
-            index++;
+        // Já possui?
+        if (service.listarTitulos(uuid).contains(tituloNome.toLowerCase())) {
+            player.sendMessage(mensagens.get("ja_possui"));
+            return;
         }
 
-        player.openInventory(loja);
-    }
-
-    private void concederTitulo(Player player, Titulo titulo) {
-        plugin.getTituloManager().darTitulo(player, titulo.getNome());
-
-        // Se for temporário, salvar no titulos_ativos.yml
-        if (!titulo.isPermanente()) {
-            long expiraMillis = System.currentTimeMillis() + titulo.getDuracaoMillis();
-            String dataFormatada = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss").format(new Date(expiraMillis));
-
-            FileConfiguration config = plugin.getTitulosAtivosConfig();
-            String path = "activeTitles." + titulo.getNome().toLowerCase() + "." + player.getUniqueId();
-
-            config.set(path + ".nick", player.getName());
-            config.set(path + ".duration", expiraMillis);
-            config.set(path + ".expires-on-exact", dataFormatada);
-            config.set(path + ".active", true);
-
-            plugin.salvarTitulosAtivos();
+        // Existe?
+        Optional<Titulo> optTitulo = service.getManager().getTituloPorNome(tituloNome);
+        if (optTitulo.isEmpty()) {
+            player.sendMessage(mensagens.get("titulo_inexistente"));
+            return;
         }
-    }
 
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent event) {
-        if (!event.getView().getTitle().equals(ChatColor.GOLD + "Loja de Títulos")) return;
-        if (event.getClickedInventory() == null || event.getCurrentItem() == null) return;
-
-        event.setCancelled(true);
-
-        ItemStack item = event.getCurrentItem();
-        if (item.getType() == Material.AIR || !item.hasItemMeta()) return;
-
-        Player player = (Player) event.getWhoClicked();
-        String displayName = ChatColor.stripColor(item.getItemMeta().getDisplayName());
-
-        // Procura o título pelo nome visível
-        Titulo titulo = plugin.getTituloManager().getTodosTitulos().stream()
-                .filter(t -> ChatColor.stripColor(t.getNomeVisivel()).equalsIgnoreCase(displayName))
-                .findFirst()
-                .orElse(null);
-
-        if (titulo == null) return;
-
+        Titulo titulo = optTitulo.get();
         int preco = titulo.getPreco();
-        String uuid = player.getUniqueId().toString();
 
-        // Verifica se já possui (apenas conquistados, não permissões)
-        if (plugin.getTituloManager().possuiTituloConquistado(player.getUniqueId(), titulo.getNome())) {
-            player.sendMessage(ChatColor.RED + "Você já possui este título!");
-            return;
-        }
-
-        // Compra grátis
-        if (preco <= 0) {
-            concederTitulo(player, titulo);
-            player.sendMessage(ChatColor.GREEN + "Você adquiriu o título " + titulo.getNomeVisivel() + " gratuitamente!");
-            return;
-        }
-
-        // Compra com tokens
-        int saldo = plugin.getTokens().getTokenCount(uuid);
-
+        // Verifica saldo de Tokens
+        int saldo = tokens.getTokenCount(uuid.toString());
         if (saldo < preco) {
-            player.sendMessage(ChatColor.RED + "Você não tem tokens suficientes! (" + saldo + "/" + preco + ")");
+            player.sendMessage(mensagens.get("sem_saldo"));
             return;
         }
 
-        plugin.getTokens().removeTokens(uuid, preco);
-        concederTitulo(player, titulo);
-        player.sendMessage(ChatColor.GREEN + "Você adquiriu o título " + titulo.getNomeVisivel() +
-                ChatColor.GRAY + " por " + preco + " tokens!");
+        // Transação atômica: debita e concede
+        tokens.removeTokens(uuid.toString(), preco);
+        service.concederTitulo(uuid, titulo.getNome());
+
+        player.sendMessage(mensagens.get("compra_sucesso", titulo.getNomeVisivel()));
     }
 }

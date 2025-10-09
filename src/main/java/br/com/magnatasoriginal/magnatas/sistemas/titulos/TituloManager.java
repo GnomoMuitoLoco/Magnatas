@@ -2,394 +2,327 @@ package br.com.magnatasoriginal.magnatas.sistemas.titulos;
 
 import br.com.magnatasoriginal.magnatas.Magnatas;
 import br.com.magnatasoriginal.magnatas.db.SQLiteManager;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.util.DuracaoParser;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.sql.*;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 public class TituloManager {
 
     private final Magnatas plugin;
-    private final SQLiteManager sqlite;
+    private final SQLiteManager db;
 
-    private final Map<String, Titulo> titulosRegistrados = new HashMap<>();
-    private final Map<UUID, Set<String>> titulosPorJogador = new HashMap<>();
-    private final Map<UUID, String> tituloEquipado = new HashMap<>();
+    // Cache em memória
+    private final Map<String, Titulo> titulosRegistrados = new ConcurrentHashMap<>();
+    private final Map<UUID, Set<String>> titulosPorJogador = new ConcurrentHashMap<>();
+    private final Map<UUID, String> tituloEquipado = new ConcurrentHashMap<>();
+    private final Map<String, Titulo> titulos = new HashMap<>();
 
-    public TituloManager(Magnatas plugin, SQLiteManager sqlite) {
+
+    public TituloManager(Magnatas plugin, SQLiteManager db) {
         this.plugin = plugin;
-        this.sqlite = sqlite;
-
+        this.db = db;
         criarTabelas();
         carregarTitulos();
-        carregarTitulosConfigurados(new File(plugin.getDataFolder(), "Sistemas/Titulos/titulos.yml"));
         carregarTitulosJogadores();
         carregarTitulosEquipados();
-
-        // Carrega títulos ativos do YAML
-        carregarTitulosAtivos();
-        // Inicia verificação periódica de expiração
         iniciarVerificadorExpiracao();
     }
+    // ---------------------------
+    // Arquivo de configuração titulos.yml
+    // ---------------------------
+    public void carregarTitulos(File file) {
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
 
-    private void criarTabelas() {
-        try (Connection conn = sqlite.openConnection();
-             Statement stmt = conn.createStatement()) {
+        ConfigurationSection section = config.getConfigurationSection("titulos");
+        if (section == null) return;
 
-            stmt.execute("CREATE TABLE IF NOT EXISTS titulos (" +
-                    "nome TEXT PRIMARY KEY, " +
-                    "descricao TEXT, " +
-                    "expiraEm TEXT)");
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection tSec = section.getConfigurationSection(key);
+            if (tSec == null) continue;
 
-            stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulos (" +
-                    "uuid TEXT, " +
-                    "titulo_nome TEXT, " +
-                    "PRIMARY KEY (uuid, titulo_nome), " +
-                    "FOREIGN KEY (titulo_nome) REFERENCES titulos(nome))");
+            String nomeVisivel = tSec.getString("nome_visivel", key);
+            String descricao = tSec.getString("descricao", "");
+            String obtencao = tSec.getString("obtencao", "");
+            String permissao = tSec.getString("permissao", "");
 
-            stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulo_equipado (" +
-                    "uuid TEXT PRIMARY KEY, " +
-                    "titulo_nome TEXT, " +
-                    "FOREIGN KEY (titulo_nome) REFERENCES titulos(nome))");
+            // Loja
+            boolean loja = tSec.getBoolean("loja.disponivel", false);
+            int preco = tSec.getInt("loja.preco", 0);
 
-        } catch (SQLException e) {
-            plugin.getLogger().warning("Erro ao criar tabelas de títulos:");
-            e.printStackTrace();
+            // Duração
+            String duracaoStr = tSec.getString("duracao", "permanente");
+            long duracaoMillis = DuracaoParser.parse(duracaoStr);
+            boolean permanente = duracaoMillis < 0;
+
+            // Expiração (se não for permanente, calcula a partir de agora)
+            Instant expiraEm = null;
+            if (!permanente && duracaoMillis > 0) {
+                expiraEm = Instant.now().plusMillis(duracaoMillis);
+            }
+
+            // Cria objeto Titulo usando o construtor que você mostrou
+            Titulo titulo = new Titulo(
+                    key,            // nome interno/id
+                    nomeVisivel,
+                    descricao,
+                    permissao,
+                    obtencao,
+                    permanente,
+                    duracaoMillis,
+                    loja,
+                    preco,
+                    expiraEm
+            );
+
+            titulos.put(key.toLowerCase(), titulo);
         }
     }
 
-    // ---------------- Registro e carregamento ----------------
 
+
+    // ---------------------------
+    // Registro de títulos
+    // ---------------------------
     public void registrarTitulo(Titulo titulo) {
-        titulosRegistrados.put(titulo.getNome().toLowerCase(), titulo);
+        titulosRegistrados.put(titulo.getNome(), titulo);
         salvarTitulo(titulo);
     }
 
-    public Titulo getTituloPorNome(String nome) {
-        return titulosRegistrados.get(nome.toLowerCase());
+    public Optional<Titulo> getTituloPorNome(String nome) {
+        return Optional.ofNullable(titulosRegistrados.get(nome.toLowerCase()));
     }
 
     public Collection<Titulo> getTodosTitulos() {
-        return titulosRegistrados.values();
+        return Collections.unmodifiableCollection(titulosRegistrados.values());
     }
 
-    private void salvarTitulo(Titulo titulo) {
-        try (Connection conn = sqlite.openConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "INSERT OR REPLACE INTO titulos (nome, descricao, expiraEm) VALUES (?, ?, ?)")) {
-            ps.setString(1, titulo.getNome());
-            ps.setString(2, titulo.getDescricao());
-            ps.setString(3, titulo.getExpiraEm() != null ? titulo.getExpiraEm().toString() : null);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+    // ---------------------------
+    // Jogadores
+    // ---------------------------
+    public Set<String> getTitulosDoJogador(UUID uuid) {
+        return Collections.unmodifiableSet(
+                titulosPorJogador.getOrDefault(uuid, Collections.emptySet())
+        );
+    }
+
+    public Set<UUID> getJogadoresComTitulos() {
+        return Collections.unmodifiableSet(titulosPorJogador.keySet());
+    }
+
+    public void darTitulo(UUID uuid, String tituloNome) {
+        final String nomeFinal = tituloNome.toLowerCase();
+        titulosPorJogador.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add(nomeFinal);
+        salvarTituloDoJogador(uuid, nomeFinal);
+    }
+
+    public void removerTitulo(UUID uuid, String tituloNome) {
+        final String nomeFinal = tituloNome.toLowerCase();
+        titulosPorJogador.getOrDefault(uuid, Collections.emptySet()).remove(nomeFinal);
+        removerTituloDoJogador(uuid, nomeFinal);
+    }
+
+    public void equiparTitulo(Player player, String tituloNome) {
+        final UUID uuid = player.getUniqueId();
+        final String nomeFinal = tituloNome.toLowerCase();
+
+        if (!getTitulosDoJogador(uuid).contains(nomeFinal)) return;
+
+        getTituloPorNome(nomeFinal).ifPresent(titulo -> {
+            if (!titulo.isExpirado()) {
+                tituloEquipado.put(uuid, nomeFinal);
+                salvarTituloEquipado(uuid, nomeFinal);
+            }
+        });
+    }
+
+    public void removerTituloEquipado(UUID uuid) {
+        tituloEquipado.remove(uuid);
+        removerTituloEquipadoDB(uuid);
+    }
+
+    public Optional<String> getTituloEquipado(UUID uuid) {
+        return Optional.ofNullable(tituloEquipado.get(uuid));
+    }
+
+    // ---------------------------
+    // Expiração
+    // ---------------------------
+    private void iniciarVerificadorExpiracao() {
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            for (UUID uuid : new HashSet<>(titulosPorJogador.keySet())) {
+                titulosPorJogador.get(uuid).removeIf(nome -> {
+                    Optional<Titulo> t = getTituloPorNome(nome);
+                    return t.map(Titulo::isExpirado).orElse(false);
+                });
+            }
+        }, 20L * 60, 20L * 60); // a cada 1 minuto
+    }
+
+    public void verificarExpiracoes(UUID uuid) {
+        Set<String> titulos = getTitulosDoJogador(uuid);
+
+        for (String nome : new HashSet<>(titulos)) {
+            Optional<Titulo> opt = getTituloPorNome(nome);
+            if (opt.isPresent()) {
+                Titulo titulo = opt.get();
+                if (titulo.isExpirado()) {
+                    removerTitulo(uuid, nome);
+
+                    // Se o jogador tinha esse título equipado, remove também
+                    getTituloEquipado(uuid).ifPresent(equipado -> {
+                        if (equipado.equalsIgnoreCase(nome)) {
+                            removerTituloEquipado(uuid);
+                        }
+                    });
+                }
+            }
         }
     }
 
-    public void apagarTitulo(String nome) {
-        titulosRegistrados.remove(nome.toLowerCase());
-        try (Connection conn = sqlite.openConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM titulos WHERE nome = ?")) {
-            ps.setString(1, nome);
+    // ---------------------------
+    // Persistência
+    // ---------------------------
+    private void criarTabelas() {
+        try (Connection conn = db.openConnection();
+             Statement stmt = conn.createStatement()) {
+            stmt.execute("CREATE TABLE IF NOT EXISTS titulos (" +
+                    "nome TEXT PRIMARY KEY, " +
+                    "descricao TEXT, " +
+                    "expira_em INTEGER)");
+            stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulos (" +
+                    "uuid TEXT, titulo_nome TEXT, PRIMARY KEY(uuid, titulo_nome))");
+            stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulo_equipado (" +
+                    "uuid TEXT PRIMARY KEY, titulo_nome TEXT)");
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao criar tabelas de títulos", e);
+        }
+    }
+
+    private void salvarTitulo(Titulo titulo) {
+        try (Connection conn = db.openConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "INSERT OR REPLACE INTO titulos (nome, descricao, expira_em) VALUES (?, ?, ?)")) {
+            ps.setString(1, titulo.getNome());
+            ps.setString(2, titulo.getDescricao());
+            ps.setObject(3, titulo.getExpiraEm().map(Instant::toEpochMilli).orElse(null));
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.WARNING, "Erro ao salvar título " + titulo.getNome(), e);
         }
     }
 
     private void carregarTitulos() {
-        try (Connection conn = sqlite.openConnection();
+        try (Connection conn = db.openConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM titulos")) {
-
             while (rs.next()) {
                 String nome = rs.getString("nome");
                 String descricao = rs.getString("descricao");
+                Long expiraMillis = rs.getLong("expira_em");
+                Instant expira = rs.wasNull() ? null : Instant.ofEpochMilli(expiraMillis);
 
-                // Se o banco tiver uma coluna de expiração, use-a
-                Timestamp expira = null;
-                try {
-                    expira = rs.getTimestamp("expira_em");
-                } catch (SQLException ignored) {
-                    // coluna pode não existir, então ignoramos
-                }
-
-                Titulo titulo;
-                if (expira != null) {
-                    // Usa construtor legado com expiração exata
-                    titulo = new Titulo(
-                            nome,
-                            plugin.colorir(descricao),
-                            expira.toLocalDateTime()
-                    );
-                } else {
-                    // Usa construtor principal com todos os campos
-                    titulo = new Titulo(
-                            nome,
-                            plugin.colorir("&f" + nome),                 // nome visível
-                            plugin.colorir(descricao),                   // descrição
-                            "magnatas.titulos." + nome.toLowerCase(),    // permissão
-                            "Banco",                                     // obtenção
-                            "permanente",                                // duração padrão
-                            false,                                       // loja
-                            0,                                           // preço
-                            nome                                         // nomePermissao
-                    );
-                }
-
-                titulosRegistrados.put(nome.toLowerCase(), titulo);
+                Titulo titulo = new Titulo(
+                        nome,
+                        nome,
+                        descricao,
+                        "magnatas.titulos." + nome,
+                        "Manual",
+                        expira == null,
+                        -1,
+                        false,
+                        0,
+                        expira
+                );
+                titulosRegistrados.put(nome, titulo);
             }
         } catch (SQLException e) {
-            plugin.getLogger().warning("Erro ao carregar títulos do banco: " + e.getMessage());
+            plugin.getLogger().log(Level.WARNING, "Erro ao carregar títulos do banco", e);
         }
     }
 
-    public void carregarTitulosConfigurados(File configFile) {
-        if (!configFile.exists()) return;
-
-        TituloConfigLoader loader = new TituloConfigLoader(configFile);
-        for (Titulo titulo : loader.getTitulos()) {
-            registrarTitulo(titulo);
-        }
-    }
-    // ---------------- Verificação de títulos conquistados ----------------
-
-    public boolean possuiTituloConquistado(UUID uuid, String nome) {
-        return titulosPorJogador
-                .getOrDefault(uuid, Collections.emptySet())
-                .contains(nome.toLowerCase());
-    }
-
-    // ---------------- Dar/remover títulos ----------------
-
-    public void darTitulo(Player player, String nome) {
-        darTitulo(player.getUniqueId(), nome);
-    }
-
-    public void darTitulo(UUID uuid, String nome) {
-        titulosPorJogador.computeIfAbsent(uuid, k -> new HashSet<>()).add(nome.toLowerCase());
-        salvarTituloDoJogador(uuid, nome.toLowerCase());
-    }
-
-    public void removerTitulo(UUID uuid, String nome) {
-        Set<String> titulos = titulosPorJogador.get(uuid);
-        if (titulos != null) {
-            titulos.remove(nome.toLowerCase());
-        }
-        removerTituloDoJogador(uuid, nome.toLowerCase());
-    }
-
-    // ---------------- Consultas ----------------
-
-    public Set<String> getTitulosDoJogador(Player player) {
-        return getTitulosDoJogador(player.getUniqueId(), player);
-    }
-
-    public Set<String> getTitulosDoJogador(UUID uuid) {
-        return getTitulosDoJogador(uuid, null);
-    }
-
-    private Set<String> getTitulosDoJogador(UUID uuid, Player player) {
-        Set<String> titulos = new HashSet<>();
-
-        // Banco
-        Set<String> conquistados = titulosPorJogador.getOrDefault(uuid, new HashSet<>());
-        titulos.addAll(conquistados);
-
-        // Permissões
-        if (player != null) {
-            for (Titulo titulo : titulosRegistrados.values()) {
-                String perm = titulo.getPermissao();
-                if (perm == null || perm.isEmpty() || player.hasPermission(perm) || player.isOp() || player.hasPermission("*")) {
-                    titulos.add(titulo.getNome().toLowerCase());
-                }
+    private void carregarTitulosJogadores() {
+        try (Connection conn = db.openConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT uuid, titulo_nome FROM jogador_titulos")) {
+            while (rs.next()) {
+                UUID uuid = UUID.fromString(rs.getString("uuid"));
+                String tituloNome = rs.getString("titulo_nome");
+                titulosPorJogador
+                        .computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet())
+                        .add(tituloNome);
             }
-        }
-
-        return titulos;
-    }
-
-    // ---------------- Equipar/remover ----------------
-
-    public void equiparTitulo(Player player, String nome) {
-        if (getTitulosDoJogador(player).contains(nome.toLowerCase())) {
-            tituloEquipado.put(player.getUniqueId(), nome.toLowerCase());
-            salvarTituloEquipado(player.getUniqueId(), nome.toLowerCase());
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Erro ao carregar títulos de jogadores", e);
         }
     }
 
-    public void removerTitulo(Player player) {
-        tituloEquipado.remove(player.getUniqueId());
-        removerTituloEquipado(player.getUniqueId());
+    private void carregarTitulosEquipados() {
+        try (Connection conn = db.openConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT uuid, titulo_nome FROM jogador_titulo_equipado")) {
+            while (rs.next()) {
+                UUID uuid = UUID.fromString(rs.getString("uuid"));
+                String tituloNome = rs.getString("titulo_nome");
+                tituloEquipado.put(uuid, tituloNome);
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Erro ao carregar títulos equipados", e);
+        }
     }
-
-    public String getTituloEquipado(Player player) {
-        return tituloEquipado.get(player.getUniqueId());
-    }
-
-    // ---------------- Persistência banco ----------------
 
     private void salvarTituloDoJogador(UUID uuid, String tituloNome) {
-        try (Connection conn = sqlite.openConnection();
+        try (Connection conn = db.openConnection();
              PreparedStatement ps = conn.prepareStatement(
                      "INSERT OR IGNORE INTO jogador_titulos (uuid, titulo_nome) VALUES (?, ?)")) {
             ps.setString(1, uuid.toString());
             ps.setString(2, tituloNome);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.WARNING, "Erro ao salvar título do jogador", e);
         }
     }
 
     private void removerTituloDoJogador(UUID uuid, String tituloNome) {
-        try (Connection conn = sqlite.openConnection();
+        try (Connection conn = db.openConnection();
              PreparedStatement ps = conn.prepareStatement(
                      "DELETE FROM jogador_titulos WHERE uuid = ? AND titulo_nome = ?")) {
             ps.setString(1, uuid.toString());
             ps.setString(2, tituloNome);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.WARNING, "Erro ao remover título do jogador", e);
         }
     }
 
     private void salvarTituloEquipado(UUID uuid, String tituloNome) {
-        try (Connection conn = sqlite.openConnection();
+        try (Connection conn = db.openConnection();
              PreparedStatement ps = conn.prepareStatement(
                      "INSERT OR REPLACE INTO jogador_titulo_equipado (uuid, titulo_nome) VALUES (?, ?)")) {
             ps.setString(1, uuid.toString());
             ps.setString(2, tituloNome);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.WARNING, "Erro ao salvar título equipado", e);
         }
     }
 
-    private void removerTituloEquipado(UUID uuid) {
-        try (Connection conn = sqlite.openConnection();
+    private void removerTituloEquipadoDB(UUID uuid) {
+        try (Connection conn = db.openConnection();
              PreparedStatement ps = conn.prepareStatement(
                      "DELETE FROM jogador_titulo_equipado WHERE uuid = ?")) {
             ps.setString(1, uuid.toString());
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            plugin.getLogger().log(Level.WARNING, "Erro ao remover título equipado", e);
         }
-    }
-
-    private void carregarTitulosJogadores() {
-        try (Connection conn = sqlite.openConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM jogador_titulos")) {
-
-            while (rs.next()) {
-                UUID uuid = UUID.fromString(rs.getString("uuid"));
-                String tituloNome = rs.getString("titulo_nome");
-                titulosPorJogador.computeIfAbsent(uuid, k -> new HashSet<>()).add(tituloNome.toLowerCase());
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void carregarTitulosEquipados() {
-        try (Connection conn = sqlite.openConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM jogador_titulo_equipado")) {
-
-            while (rs.next()) {
-                UUID uuid = UUID.fromString(rs.getString("uuid"));
-                String tituloNome = rs.getString("titulo_nome");
-                tituloEquipado.put(uuid, tituloNome.toLowerCase());
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Map<UUID, Set<String>> getTitulosPorJogador() {
-        return Collections.unmodifiableMap(titulosPorJogador);
-    }
-
-    public int getQuantidadeTitulos(Player player) {
-        return getTitulosDoJogador(player).size();
-    }
-
-    public void recarregarTitulos() {
-        titulosRegistrados.clear();
-        carregarTitulos();
-        carregarTitulosConfigurados(new File(plugin.getDataFolder(), "Sistemas/Titulos/titulos.yml"));
-        carregarTitulosAtivos();
-    }
-
-    // ---------------- Integração com titulos_ativos.yml ----------------
-
-    public void carregarTitulosAtivos() {
-        FileConfiguration config = plugin.getTitulosAtivosConfig();
-        ConfigurationSection section = config.getConfigurationSection("activeTitles");
-        if (section == null) return;
-
-        for (String tituloNome : section.getKeys(false)) {
-            ConfigurationSection tituloSec = section.getConfigurationSection(tituloNome);
-            if (tituloSec == null) continue;
-
-            for (String uuidStr : tituloSec.getKeys(false)) {
-                UUID uuid = UUID.fromString(uuidStr);
-                boolean active = tituloSec.getBoolean(uuidStr + ".active", false);
-                long duration = tituloSec.getLong(uuidStr + ".duration", -1);
-
-                if (active && (duration == -1 || System.currentTimeMillis() < duration)) {
-                    // ainda válido → adiciona ao jogador
-                    titulosPorJogador.computeIfAbsent(uuid, k -> new HashSet<>()).add(tituloNome.toLowerCase());
-                } else if (active) {
-                    // expirado → marca como inativo
-                    tituloSec.set(uuidStr + ".active", false);
-                }
-            }
-        }
-        plugin.salvarTitulosAtivos();
-    }
-
-    private void iniciarVerificadorExpiracao() {
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                FileConfiguration config = plugin.getTitulosAtivosConfig();
-                ConfigurationSection section = config.getConfigurationSection("activeTitles");
-                if (section == null) return;
-
-                boolean changed = false;
-
-                for (String tituloNome : section.getKeys(false)) {
-                    ConfigurationSection tituloSec = section.getConfigurationSection(tituloNome);
-                    if (tituloSec == null) continue;
-
-                    for (String uuidStr : tituloSec.getKeys(false)) {
-                        long duration = tituloSec.getLong(uuidStr + ".duration", -1);
-                        boolean active = tituloSec.getBoolean(uuidStr + ".active", false);
-
-                        if (active && duration > 0 && System.currentTimeMillis() > duration) {
-                            tituloSec.set(uuidStr + ".active", false);
-                            changed = true;
-
-                            Player p = Bukkit.getPlayer(UUID.fromString(uuidStr));
-                            if (p != null) {
-                                p.sendMessage(ChatColor.RED + "Seu título " + tituloNome + " expirou!");
-                            }
-                        }
-                    }
-                }
-
-                if (changed) plugin.salvarTitulosAtivos();
-            }
-        }.runTaskTimer(plugin, 20L, 1200L); // roda a cada 60s
     }
 }

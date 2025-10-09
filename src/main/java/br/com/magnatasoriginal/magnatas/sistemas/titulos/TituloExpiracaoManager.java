@@ -1,76 +1,100 @@
 package br.com.magnatasoriginal.magnatas.sistemas.titulos;
 
 import br.com.magnatasoriginal.magnatas.Magnatas;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
 
-import java.io.File;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
 
 public class TituloExpiracaoManager {
 
     private final Magnatas plugin;
-    private final File arquivo;
-    private final YamlConfiguration config;
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+    private final TituloManager tituloManager;
 
-    public TituloExpiracaoManager(Magnatas plugin) {
+    // Cache de títulos ativos por jogador
+    private final Map<UUID, Set<String>> ativos = new ConcurrentHashMap<>();
+
+    private BukkitTask task;
+
+    public TituloExpiracaoManager(Magnatas plugin, TituloManager tituloManager) {
         this.plugin = plugin;
-        this.arquivo = new File(plugin.getDataFolder(), "titulos_ativos.yml");
-        this.config = YamlConfiguration.loadConfiguration(arquivo);
+        this.tituloManager = tituloManager;
     }
 
-    public LocalDateTime getExpiracao(UUID uuid, String titulo) {
-        String path = "titulos_ativos." + titulo + "." + uuid.toString() + ".expires-on";
-        if (!config.contains(path)) return null;
+    /**
+     * Inicia o verificador de expiração em modo assíncrono.
+     */
+    public void iniciar() {
+        long intervaloSegundos = plugin.getConfig().getLong("titulos.expiracao.intervalo", 60L);
 
-        String dataStr = config.getString(path);
+        if (task != null && !task.isCancelled()) {
+            task.cancel();
+        }
+
+        task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::verificarExpiracoes,
+                intervaloSegundos * 20L, intervaloSegundos * 20L);
+
+        plugin.getLogger().info("⏳ Verificador de expiração de títulos iniciado (intervalo: "
+                + intervaloSegundos + "s)");
+    }
+
+    /**
+     * Para o verificador de expiração.
+     */
+    public void parar() {
+        if (task != null) {
+            task.cancel();
+            plugin.getLogger().info("⏹ Verificador de expiração de títulos parado.");
+        }
+    }
+
+    /**
+     * Verifica títulos expirados de todos os jogadores.
+     */
+    private void verificarExpiracoes() {
         try {
-            return LocalDateTime.parse(dataStr, formatter);
+            for (UUID uuid : tituloManager.getJogadoresComTitulos()) {
+                Set<String> titulos = new HashSet<>(tituloManager.getTitulosDoJogador(uuid));
+
+                for (String nome : titulos) {
+                    tituloManager.getTituloPorNome(nome).ifPresent(titulo -> {
+                        if (titulo.isExpirado()) {
+                            removerTituloExpirado(uuid, titulo);
+                        }
+                    });
+                }
+            }
         } catch (Exception e) {
-            return null;
+            plugin.getLogger().log(Level.SEVERE, "Erro ao verificar expirações de títulos", e);
         }
     }
 
-    public void setExpiracao(UUID uuid, String titulo, LocalDateTime novaData) {
-        String base = "titulos_ativos." + titulo + "." + uuid.toString();
-        config.set(base + ".nick", plugin.getServer().getOfflinePlayer(uuid).getName());
-        config.set(base + ".expires-on", novaData.format(formatter));
-        config.set(base + ".ativo", true);
-        salvar();
-    }
+    /**
+     * Remove título expirado e dispara evento customizado.
+     */
+    private void removerTituloExpirado(UUID uuid, Titulo titulo) {
+        tituloManager.removerTitulo(uuid, titulo.getNome());
 
-    public void adicionarDuracao(UUID uuid, String titulo, long duracaoMillis) {
-        LocalDateTime atual = getExpiracao(uuid, titulo);
-        LocalDateTime nova;
+        // Se estava equipado, remove também
+        tituloManager.getTituloEquipado(uuid).ifPresent(equipado -> {
+            if (equipado.equalsIgnoreCase(titulo.getNome())) {
+                tituloManager.removerTituloEquipado(uuid);
+            }
+        });
 
-        if (atual != null && atual.isAfter(LocalDateTime.now())) {
-            nova = atual.plusNanos(duracaoMillis * 1_000_000); // converte millis para nanos
-        } else {
-            nova = LocalDateTime.now().plusNanos(duracaoMillis * 1_000_000);
-        }
+        // Log
+        plugin.getLogger().info("⚠ Título '" + titulo.getNomeVisivel() + "' expirou para jogador " + uuid);
 
-        setExpiracao(uuid, titulo, nova);
-    }
-
-    public boolean isTituloValido(UUID uuid, String titulo) {
-        LocalDateTime expira = getExpiracao(uuid, titulo);
-        return expira == null || LocalDateTime.now().isBefore(expira);
-    }
-
-    public void removerExpirado(UUID uuid, String titulo) {
-        String path = "titulos_ativos." + titulo + "." + uuid.toString();
-        config.set(path + ".ativo", false);
-        salvar();
-    }
-
-    private void salvar() {
-        try {
-            config.save(arquivo);
-        } catch (IOException e) {
-            plugin.getLogger().warning("Não foi possível salvar titulos_ativos.yml: " + e.getMessage());
-        }
+        // Evento customizado
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.isOnline()) {
+                Bukkit.getPluginManager().callEvent(new TituloExpiradoEvent(player, titulo));
+                player.sendMessage("§cSeu título '" + titulo.getNomeVisivel() + "' expirou!");
+            }
+        });
     }
 }
