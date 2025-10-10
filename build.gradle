@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'br.com.magnatasoriginal'
-version = '2.3.3'
+version = '2.3.7'
 
 repositories {
     mavenCentral()
@@ -20,6 +20,9 @@ repositories {
 
     // Jitpack (para VaultAPI)
     maven { url = 'https://jitpack.io' }
+
+    // Luck Perms
+    maven { url = 'https://repo.lucko.me/'}
 }
 
 
@@ -35,6 +38,9 @@ dependencies {
 
     // VaultAPI
     compileOnly 'com.github.MilkBowl:VaultAPI:1.7'
+
+    // Luck Perms
+    compileOnly 'net.luckperms:api:5.4'
 }
 
 

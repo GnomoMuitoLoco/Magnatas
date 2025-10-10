@@ -1,40 +1,75 @@
 titulos:
-  dragao:
-    nome_visivel: "&cDragão"
-    descricao: "&7Título lendário de fogo"
+  guerreiro:
+    nomeVisivel: "§cGuerreiro"
+    descricao: "Um bravo combatente"
     obtencao: "Loja"
-    permissao: "magnatas.titulos.dragao"
-    loja:
-      disponivel: true
-      preco: 500
-    duracao: permanente
+    preco: 50
+    permissao: "magnatas.titulo.guerreiro"
+    loja: true
+    permanente: true
 
-  peidao:
-    nome_visivel: "&ePeidão"
-    descricao: "&7Peidos de fogo sufocante"
-    obtencao: "Eventos"
-    permissao: "magnatas.titulos.peidao"
-    loja:
-      disponivel: true
+  mago:
+    nomeVisivel: "§9Mago"
+    descricao: "Mestre das artes arcanas"
+    obtencao: "Loja"
+    preco: 75
+    permissao: "magnatas.titulo.mago"
+    loja: true
+    permanente: true
+
+  arqueiro:
+    nomeVisivel: "§aArqueiro"
+    descricao: "Especialista em ataques à distância"
+    obtencao: "Loja"
+    preco: 60
+    permissao: "magnatas.titulo.arqueiro"
+    loja: true
+    permanente: true
+
+  rei:
+    nomeVisivel: "§6Rei"
+    descricao: "O soberano absoluto"
+    obtencao: "Evento especial"
+    preco: 200
+    permissao: "magnatas.titulo.rei"
+    loja: true
+    permanente: true
+
+  aprendiz:
+    nomeVisivel: "§7Aprendiz"
+    descricao: "Um iniciante em busca de poder"
+    obtencao: "Loja"
+    preco: 20
+    permissao: "magnatas.titulo.aprendiz"
+    loja: true
+    permanente: true
+
+  campeão_temporario:
+    nomeVisivel: "§eCampeão Temporário"
+    descricao: "Título válido por tempo limitado"
+    obtencao: "Loja"
+    preco: 100
+    permissao: "magnatas.titulo.campeao"
+    loja: true
+    permanente: false
+    duracao: 604800000 # 7 dias em milissegundos
+
+  mestre_sazonal:
+    nomeVisivel: "§dMestre Sazonal"
+    descricao: "Disponível apenas nesta temporada"
+    obtencao: "Recompensa Sazonal"
+    preco: 150
+    permissao: "magnatas.titulo.mestre"
+    loja: true
+    permanente: false
+    duracao: 2592000000 # 30 dias em milissegundos
+
+  titulos:
+    novato:
+      nomeVisivel: "§aNovato"
+      descricao: "Título gratuito para iniciantes"
+      obtencao: "Grátis na loja"
       preco: 0
-    duracao: 7d
-
-  vip:
-    nome_visivel: "&bVIP"
-    descricao: "&7Título exclusivo para jogadores VIP"
-    obtencao: "Permissão"
-    permissao: "magnatas.titulos.vip"
-    loja:
-      disponivel: false
-      preco: 0
-    duracao: permanente
-
-  relampago:
-    nome_visivel: "&6Relâmpago"
-    descricao: "&7Título temporário de velocidade"
-    obtencao: "Evento"
-    permissao: "magnatas.titulos.relampago"
-    loja:
-      disponivel: true
-      preco: 100
-    duracao: 1h
+      permissao: "magnatas.titulo.novato"
+      loja: true
+      permanente: true

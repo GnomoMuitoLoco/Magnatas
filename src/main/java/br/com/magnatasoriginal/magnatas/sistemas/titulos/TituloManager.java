@@ -97,6 +97,12 @@ public class TituloManager {
         salvarTitulo(titulo);
     }
 
+    public Optional<Titulo> getTituloPorNomeVisivel(String nomeVisivel) {
+        return getTodosTitulos().stream()
+                .filter(t -> t.getNomeVisivel().equalsIgnoreCase(nomeVisivel))
+                .findFirst();
+    }
+
     public Optional<Titulo> getTituloPorNome(String nome) {
         return Optional.ofNullable(titulosRegistrados.get(nome.toLowerCase()));
     }

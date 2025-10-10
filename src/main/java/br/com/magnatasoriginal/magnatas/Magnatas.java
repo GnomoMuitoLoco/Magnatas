@@ -14,6 +14,7 @@ import br.com.magnatasoriginal.magnatas.sistemas.mensagens.*;
 import br.com.magnatasoriginal.magnatas.sistemas.titulos.*;
 import br.com.magnatasoriginal.magnatas.sistemas.titulos.gui.TituloGUIService;
 import br.com.magnatasoriginal.magnatas.sistemas.titulos.gui.TituloMenu;
+import br.com.magnatasoriginal.magnatas.sistemas.titulos.listener.TituloLojaListener;
 import br.com.magnatasoriginal.magnatas.sistemas.titulos.lojadetitulos.LojadeTitulos;
 import br.com.magnatasoriginal.magnatas.sistemas.titulos.tasks.TituloTaskScheduler;
 import br.com.magnatasoriginal.magnatas.sistemas.warps.*;
@@ -24,6 +25,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import net.luckperms.api.LuckPerms;
+
 
 import java.io.File;
 import java.sql.*;
@@ -50,6 +53,8 @@ public final class Magnatas extends JavaPlugin {
     private TituloTaskScheduler scheduler;
     private BukkitTask tarefaAjuda;
     private TituloGUIService tituloGUIService;
+    private LuckPerms luckPerms;
+
 
     private BukkitTask ajudaTask;
 
@@ -84,6 +89,14 @@ public final class Magnatas extends JavaPlugin {
         }
         titulosAtivosConfig = YamlConfiguration.loadConfiguration(titulosAtivosFile);
 
+        // Obtém a instância do LuckPerms
+        this.luckPerms = getServer().getServicesManager().load(LuckPerms.class);
+        if (luckPerms == null) {
+            getLogger().severe("LuckPerms não encontrado! O plugin não funcionará corretamente.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+
         // 4) Mensagens
         String caminhoMensagens = "Sistemas/Mensagens/pt_br.yml";
         saveResource(caminhoMensagens, false);
@@ -109,7 +122,9 @@ public final class Magnatas extends JavaPlugin {
         // --- TITULOS ---
         //Database
         tituloManager = new TituloManager(this, sqliteManager);
-        tituloManager.carregarTitulos(new File(getDataFolder(), "Sistemas/Titulos/titulos.yml"));
+        //tituloManager.carregarTitulos(new File(getDataFolder(), "Sistemas/Titulos/titulos.yml"));
+        TituloConfigLoader loader = new TituloConfigLoader(this);
+        loader.getTitulos().forEach(tituloManager::registrarTitulo);
         //Cache
         TituloCache tituloCache = new TituloCache();
         tituloService = new TituloService(tituloManager, tituloCache);
@@ -126,6 +141,13 @@ public final class Magnatas extends JavaPlugin {
         //Scheduler de Expiração de titulos
         TituloTaskScheduler scheduler = new TituloTaskScheduler(this, tituloService, tituloCache);
         scheduler.iniciarVerificacaoExpiracao(20L * 60L); // a cada 60 segundos
+        //Listener (Interação na GUI da loja)
+        // Registra o listener da loja
+        getServer().getPluginManager().registerEvents(
+                new TituloLojaListener(tituloService, tituloManager, tokens, luckPerms),
+                this
+        );
+
 
         // 6) Tarefa de ajuda automática
         int intervaloAjuda = config.getInt("ajuda_convite_intervalo", 300);

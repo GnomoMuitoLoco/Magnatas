@@ -83,7 +83,7 @@ public class TituloConfigLoader {
                     ConfigurationSection tSec = sec.getConfigurationSection(key);
                     if (tSec == null) continue;
 
-                    String nomeVisivel = tSec.getString("nome", key);
+                    String nomeVisivel = tSec.getString("nomeVisivel", key); // corrigido
                     String descricao = tSec.getString("descricao", "");
                     String permissao = tSec.getString("permissao", "magnatas.titulo." + key);
                     String obtencao = tSec.getString("obtencao", "Desconhecido");
@@ -136,12 +136,12 @@ public class TituloConfigLoader {
      */
     public void salvar() {
         try {
-            FileConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+            FileConfiguration config = new YamlConfiguration();
             ConfigurationSection sec = config.createSection("titulos");
 
             for (Titulo titulo : cacheTitulos.values()) {
                 ConfigurationSection tSec = sec.createSection(titulo.getNome());
-                tSec.set("nome", titulo.getNomeVisivel());
+                tSec.set("nomeVisivel", titulo.getNomeVisivel()); // corrigido
                 tSec.set("descricao", titulo.getDescricao());
                 tSec.set("permissao", titulo.getPermissao());
                 tSec.set("obtencao", titulo.getObtencao());

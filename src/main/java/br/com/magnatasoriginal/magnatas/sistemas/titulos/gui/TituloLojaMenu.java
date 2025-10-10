@@ -10,67 +10,102 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class TituloLojaMenu {
 
     private static final String MENU_TITLE = "§6Loja de Títulos";
+    public static final int ITEMS_PER_PAGE = 36; // 54 slots - 18 reservados para bordas e navegação
     private final TituloManager tituloManager;
 
     public TituloLojaMenu(TituloManager tituloManager) {
         this.tituloManager = tituloManager;
     }
 
-    public Inventory criarMenu(Player player) {
-        Collection<Titulo> titulos = tituloManager.getTodosTitulos();// carregados do titulos.yml
-        Inventory inv = Bukkit.createInventory(null, 54, MENU_TITLE);
+    public Inventory criarMenu(Player player, int pagina) {
+        List<Titulo> todos = tituloManager.getTodosTitulos().stream()
+                .filter(Titulo::isLoja)
+                .toList();
 
-        int slot = 0;
-        for (Titulo titulo : titulos) {
-            // só mostra se estiver disponível na loja
-            if (!titulo.isLoja()) continue;
+        // Corrigido: pagina 1-based
+        int start = (pagina - 1) * ITEMS_PER_PAGE;
+        int end = Math.min(start + ITEMS_PER_PAGE, todos.size());
 
+        Inventory inv = Bukkit.createInventory(null, 54, MENU_TITLE + " - Página " + pagina);
+
+        // Moldura completa
+        ItemStack vidro = criarVidroDecorativo();
+        for (int i = 0; i < 9; i++) inv.setItem(i, vidro);
+        for (int i = 45; i < 54; i++) inv.setItem(i, vidro);
+        for (int i = 9; i < 45; i += 9) {
+            inv.setItem(i, vidro);
+            inv.setItem(i + 8, vidro);
+        }
+
+        // Preenche títulos
+        for (int i = start; i < end; i++) {
+            Titulo titulo = todos.get(i);
             ItemStack item = new ItemStack(Material.NAME_TAG);
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
-                meta.setDisplayName(titulo.getNomeVisivel()); // já vem colorido do config
-
+                meta.setDisplayName(titulo.getNomeVisivel());
                 List<String> lore = new ArrayList<>();
                 lore.add("§7" + titulo.getDescricao());
                 lore.add("§7Método de obtenção: §f" + titulo.getObtencao());
                 lore.add("§7Duração: §f" + formatarDuracao(titulo));
                 lore.add("§aPreço: " + titulo.getPreco() + " tokens");
-                lore.add("§eClique para comprar");
-
+                lore.add("§eClique com botão esquerdo para comprar");
                 meta.setLore(lore);
                 item.setItemMeta(meta);
             }
-            inv.setItem(slot++, item);
+            // começa no slot 10 (primeira linha útil dentro da moldura)
+            inv.setItem(10 + (i - start), item);
         }
+
+        // Botões de navegação
+        // Calcula total de páginas (mínimo 1)
+        int totalPaginas = Math.max(1, (int) Math.ceil((double) todos.size() / ITEMS_PER_PAGE));
+
+        inv.setItem(48, criarBotao(Material.ARROW, "§ePágina anterior"));
+        inv.setItem(50, criarBotao(Material.ARROW, "§ePróxima página"));
 
         return inv;
     }
 
-    private String formatarDuracao(Titulo titulo) {
-        if (titulo.isPermanente()) {
-            return "Permanente";
+    private ItemStack criarVidroDecorativo() {
+        ItemStack item = new ItemStack(Material.YELLOW_STAINED_GLASS_PANE);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(" ");
+            item.setItemMeta(meta);
         }
+        return item;
+    }
+
+    private ItemStack criarBotao(Material material, String nome) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(nome);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private String formatarDuracao(Titulo titulo) {
+        if (titulo.isPermanente()) return "Permanente";
         long millis = titulo.getDuracaoMillis();
         if (millis <= 0) return "Desconhecida";
 
-        long horas = TimeUnit.MILLISECONDS.toHours(millis);
         long dias = TimeUnit.MILLISECONDS.toDays(millis);
+        if (dias > 0) return dias + " dia" + (dias > 1 ? "s" : "");
 
-        if (dias > 0) {
-            return dias + " dia" + (dias > 1 ? "s" : "");
-        } else if (horas > 0) {
-            return horas + " hora" + (horas > 1 ? "s" : "");
-        } else {
-            long minutos = TimeUnit.MILLISECONDS.toMinutes(millis);
-            return minutos + " minuto" + (minutos > 1 ? "s" : "");
-        }
+        long horas = TimeUnit.MILLISECONDS.toHours(millis);
+        if (horas > 0) return horas + " hora" + (horas > 1 ? "s" : "");
+
+        long minutos = TimeUnit.MILLISECONDS.toMinutes(millis);
+        return minutos + " minuto" + (minutos > 1 ? "s" : "");
     }
 
     public static String getMenuTitle() {

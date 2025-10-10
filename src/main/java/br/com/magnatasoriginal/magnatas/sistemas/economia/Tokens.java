@@ -190,6 +190,13 @@ public class Tokens {
     public void removeTokens(String uuid, int amount) {
         modifyTokens(uuid, -amount, false);
     }
+    public int getTokenCount(UUID uuid) {
+        return getTokenCount(uuid.toString());
+    }
+
+    public void removeTokens(UUID uuid, int amount) {
+        removeTokens(uuid.toString(), amount);
+    }
 
     private void modifyTokens(String uuid, int delta, boolean override) {
         new BukkitRunnable() {

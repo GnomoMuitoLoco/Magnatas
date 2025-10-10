@@ -35,7 +35,7 @@ public class TokenLojaGUI implements Listener {
         inv.setItem(13, createIcon(Material.DIAMOND_CHESTPLATE, ChatColor.AQUA + "Cosméticos",
                 "Itens visuais e estilos para personalizar seu personagem."));
         inv.setItem(15, createIcon(Material.NETHER_STAR, ChatColor.LIGHT_PURPLE + "Recompensas Sazonais",
-                "Prêmios especiais disponíveis apenas nesta temporada."));
+                "Prêmios especiais disponíveis temporariamente."));
 
         player.openInventory(inv);
     }
@@ -69,7 +69,7 @@ public class TokenLojaGUI implements Listener {
             player.closeInventory();
             player.sendMessage(ChatColor.YELLOW + "Abrindo loja de Títulos...");
             TituloLojaMenu lojaMenu = new TituloLojaMenu(plugin.getTituloManager());
-            player.openInventory(lojaMenu.criarMenu(player));
+            player.openInventory(lojaMenu.criarMenu(player, 1)); // ✅ corrigido
         } else if (type == Material.DIAMOND_CHESTPLATE) {
             player.closeInventory();
             player.sendMessage(ChatColor.AQUA + "Abrindo loja de Cosméticos...");
