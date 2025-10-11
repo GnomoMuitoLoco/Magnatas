@@ -64,12 +64,216 @@ titulos:
     permanente: false
     duracao: 2592000000 # 30 dias em milissegundos
 
-  titulos:
-    novato:
-      nomeVisivel: "§aNovato"
-      descricao: "Título gratuito para iniciantes"
-      obtencao: "Grátis na loja"
-      preco: 0
-      permissao: "magnatas.titulo.novato"
-      loja: true
-      permanente: true
+  guerreiro_temporario:
+    nomeVisivel: "§cGuerreiro Temporário"
+    descricao: "Versão limitada do bravo combatente"
+    obtencao: "Loja"
+    preco: 40
+    permissao: "magnatas.titulo.guerreiro_temp"
+    loja: true
+    permanente: false
+    duracao: 86400000 # 1 dia
+
+  mago_temporario:
+    nomeVisivel: "§9Mago Temporário"
+    descricao: "Poder arcano por tempo limitado"
+    obtencao: "Loja"
+    preco: 45
+    permissao: "magnatas.titulo.mago_temp"
+    loja: true
+    permanente: false
+    duracao: 3600000 # 1 hora
+
+  arqueiro_temporario:
+    nomeVisivel: "§aArqueiro Temporário"
+    descricao: "Ataques à distância por tempo limitado"
+    obtencao: "Loja"
+    preco: 35
+    permissao: "magnatas.titulo.arqueiro_temp"
+    loja: true
+    permanente: false
+    duracao: 1800000 # 30 minutos
+
+  aprendiz_temporario:
+    nomeVisivel: "§7Aprendiz Temporário"
+    descricao: "Início rápido com tempo contado"
+    obtencao: "Loja"
+    preco: 15
+    permissao: "magnatas.titulo.aprendiz_temp"
+    loja: true
+    permanente: false
+    duracao: 600000 # 10 minutos
+
+  rei_temporario:
+    nomeVisivel: "§6Rei Temporário"
+    descricao: "Soberania por tempo limitado"
+    obtencao: "Loja"
+    preco: 80
+    permissao: "magnatas.titulo.rei_temp"
+    loja: true
+    permanente: false
+    duracao: 300000 # 5 minutos
+
+  sombra:
+    nomeVisivel: "§8Sombra"
+    descricao: "Título sombrio e misterioso"
+    obtencao: "Loja"
+    preco: 70
+    permissao: "magnatas.titulo.sombra"
+    loja: true
+    permanente: true
+
+  luz:
+    nomeVisivel: "§fLuz"
+    descricao: "Título radiante e puro"
+    obtencao: "Loja"
+    preco: 70
+    permissao: "magnatas.titulo.luz"
+    loja: true
+    permanente: true
+
+  guardião:
+    nomeVisivel: "§bGuardião"
+    descricao: "Protetor dos reinos"
+    obtencao: "Loja"
+    preco: 90
+    permissao: "magnatas.titulo.guardiao"
+    loja: true
+    permanente: true
+
+  viajante:
+    nomeVisivel: "§3Viajante"
+    descricao: "Explorador de terras distantes"
+    obtencao: "Loja"
+    preco: 65
+    permissao: "magnatas.titulo.viajante"
+    loja: true
+    permanente: true
+
+  forasteiro:
+    nomeVisivel: "§2Forasteiro"
+    descricao: "Visitante de outros mundos"
+    obtencao: "Loja"
+    preco: 55
+    permissao: "magnatas.titulo.forasteiro"
+    loja: true
+    permanente: true
+
+  elemental:
+    nomeVisivel: "§bElemental"
+    descricao: "Dominador dos elementos"
+    obtencao: "Loja"
+    preco: 80
+    permissao: "magnatas.titulo.elemental"
+    loja: true
+    permanente: true
+
+  druida:
+    nomeVisivel: "§2Druida"
+    descricao: "Guardião da natureza"
+    obtencao: "Loja"
+    preco: 70
+    permissao: "magnatas.titulo.druida"
+    loja: true
+    permanente: true
+
+  assassino:
+    nomeVisivel: "§0Assassino"
+    descricao: "Mestre do ataque furtivo"
+    obtencao: "Loja"
+    preco: 85
+    permissao: "magnatas.titulo.assassino"
+    loja: true
+    permanente: true
+
+  cavaleiro:
+    nomeVisivel: "§7Cavaleiro"
+    descricao: "Defensor da honra"
+    obtencao: "Loja"
+    preco: 60
+    permissao: "magnatas.titulo.cavaleiro"
+    loja: true
+    permanente: true
+
+  alquimista:
+    nomeVisivel: "§eAlquimista"
+    descricao: "Criador de poções e misturas"
+    obtencao: "Loja"
+    preco: 75
+    permissao: "magnatas.titulo.alquimista"
+    loja: true
+    permanente: true
+
+  caçador:
+    nomeVisivel: "§aCaçador"
+    descricao: "Rastreador implacável"
+    obtencao: "Loja"
+    preco: 65
+    permissao: "magnatas.titulo.cacador"
+    loja: true
+    permanente: true
+
+  pirata:
+    nomeVisivel: "§6Pirata"
+    descricao: "Rei dos mares"
+    obtencao: "Loja"
+    preco: 90
+    permissao: "magnatas.titulo.pirata"
+    loja: true
+    permanente: true
+
+  samurai:
+    nomeVisivel: "§cSamurai"
+    descricao: "Guerreiro da disciplina"
+    obtencao: "Loja"
+    preco: 85
+    permissao: "magnatas.titulo.samurai"
+    loja: true
+    permanente: true
+
+  ninja:
+    nomeVisivel: "§8Ninja"
+    descricao: "Sombra letal"
+    obtencao: "Loja"
+    preco: 80
+    permissao: "magnatas.titulo.ninja"
+    loja: true
+    permanente: true
+
+  bárbaro:
+    nomeVisivel: "§4Bárbaro"
+    descricao: "Força bruta e selvagem"
+    obtencao: "Loja"
+    preco: 70
+    permissao: "magnatas.titulo.barbaro"
+    loja: true
+    permanente: true
+
+  feiticeiro:
+    nomeVisivel: "§5Feiticeiro"
+    descricao: "Manipulador de magia obscura"
+    obtencao: "Loja"
+    preco: 90
+    permissao: "magnatas.titulo.feiticeiro"
+    loja: true
+    permanente: true
+
+  viajante_temporario:
+    nomeVisivel: "§3Viajante Temporário"
+    descricao: "Explorador por tempo limitado"
+    obtencao: "Loja"
+    preco: 50
+    permissao: "magnatas.titulo.viajante_temp"
+    loja: true
+    permanente: false
+    duracao: 86400000 # 1 dia
+
+  teste_1min:
+    nomeVisivel: "§cTeste 1 Minuto"
+    descricao: "Título temporário para testes rápidos"
+    obtencao: "Debug"
+    preco: 0
+    permissao: "magnatas.titulo.teste1min"
+    loja: true
+    permanente: false
+    duracao: 60000 # 1 minuto em milissegundos

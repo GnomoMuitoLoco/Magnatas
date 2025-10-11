@@ -17,7 +17,7 @@ public class TituloGUIListener implements Listener {
     @EventHandler
     public void aoClicar(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
-        if (e.getView().getTitle().equals(TituloMenu.getMenuTitle())) {
+        if (e.getView().getTitle().startsWith(TituloMenu.getMenuTitle())) {
             e.setCancelled(true);
             if (e.getCurrentItem() != null) {
                 service.processarClique(player, e.getSlot());
@@ -27,8 +27,7 @@ public class TituloGUIListener implements Listener {
 
     @EventHandler
     public void aoFechar(InventoryCloseEvent e) {
-        if (e.getView().getTitle().equals(TituloMenu.getMenuTitle())) {
-            // Garantia contra leaks: nada fica preso em memória
+        if (e.getView().getTitle().startsWith(TituloMenu.getMenuTitle())) {
             e.getInventory().clear();
         }
     }

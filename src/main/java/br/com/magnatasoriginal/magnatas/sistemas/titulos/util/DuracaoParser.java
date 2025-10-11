@@ -50,24 +50,31 @@ public class DuracaoParser {
      */
     public static String formatar(long millis) {
         if (millis < 0) return "Permanente";
+        if (millis == 0) return "Expirado";
 
-        long dias = TimeUnit.MILLISECONDS.toDays(millis);
-        millis -= TimeUnit.DAYS.toMillis(dias);
+        long segundos = millis / 1000;
+        long minutos = segundos / 60;
+        long horas = minutos / 60;
+        long dias = horas / 24;
 
-        long horas = TimeUnit.MILLISECONDS.toHours(millis);
-        millis -= TimeUnit.HOURS.toMillis(horas);
-
-        long minutos = TimeUnit.MILLISECONDS.toMinutes(millis);
-        millis -= TimeUnit.MINUTES.toMillis(minutos);
-
-        long segundos = TimeUnit.MILLISECONDS.toSeconds(millis);
+        horas = horas % 24;
+        minutos = minutos % 60;
+        segundos = segundos % 60;
 
         StringBuilder sb = new StringBuilder();
-        if (dias > 0) sb.append(dias).append("d ");
-        if (horas > 0) sb.append(horas).append("h ");
-        if (minutos > 0) sb.append(minutos).append("m ");
-        if (segundos > 0) sb.append(segundos).append("s");
+        if (dias > 0) sb.append(dias).append(" dia").append(dias > 1 ? "s" : "");
+        if (horas > 0) {
+            if (sb.length() > 0) sb.append(" e ");
+            sb.append(horas).append("h");
+        }
+        if (dias == 0 && minutos > 0) {
+            if (sb.length() > 0) sb.append(" e ");
+            sb.append(minutos).append("min");
+        }
+        if (dias == 0 && horas == 0 && minutos == 0 && segundos > 0) {
+            sb.append(segundos).append("s");
+        }
 
-        return sb.toString().trim();
+        return sb.toString();
     }
 }

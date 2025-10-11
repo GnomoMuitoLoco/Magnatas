@@ -129,8 +129,7 @@ public final class Magnatas extends JavaPlugin {
         TituloCache tituloCache = new TituloCache();
         tituloService = new TituloService(tituloManager, tituloCache);
         //Serviço de GUI
-        tituloMenu = new TituloMenu();
-        tituloMenu = new TituloMenu();
+        tituloMenu = new TituloMenu(tituloService);
         this.tituloGUIService = new TituloGUIService(this, tituloService, tituloMenu);
         //Loja de titulos
         lojadeTitulos = new LojadeTitulos(this, tituloService, mensagens, tokens);

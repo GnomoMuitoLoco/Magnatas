@@ -40,6 +40,17 @@ public class SQLiteManager {
                 )
             """);
 
+            // Títulos adquiridos por jogador (com data de aquisição)
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS jogador_titulos (
+                    uuid TEXT,
+                    titulo_nome TEXT,
+                    adquirido_em INTEGER,
+                    PRIMARY KEY(uuid, titulo_nome),
+                    FOREIGN KEY (titulo_nome) REFERENCES titulos(nome)
+                )
+            """);
+
             // Título atualmente equipado por jogador
             stmt.execute("""
                 CREATE TABLE IF NOT EXISTS jogador_titulo_equipado (

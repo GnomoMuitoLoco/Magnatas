@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 public class TituloLojaMenu {
 
     private static final String MENU_TITLE = "§6Loja de Títulos";
-    public static final int ITEMS_PER_PAGE = 36; // 54 slots - 18 reservados para bordas e navegação
+    public static final int ITEMS_PER_PAGE = 28; // slots internos válidos
     private final TituloManager tituloManager;
 
     public TituloLojaMenu(TituloManager tituloManager) {
@@ -28,7 +28,6 @@ public class TituloLojaMenu {
                 .filter(Titulo::isLoja)
                 .toList();
 
-        // Corrigido: pagina 1-based
         int start = (pagina - 1) * ITEMS_PER_PAGE;
         int end = Math.min(start + ITEMS_PER_PAGE, todos.size());
 
@@ -43,8 +42,15 @@ public class TituloLojaMenu {
             inv.setItem(i + 8, vidro);
         }
 
-        // Preenche títulos
-        for (int i = start; i < end; i++) {
+        // Slots internos válidos (7x4)
+        List<Integer> slotsValidos = List.of(
+                10, 11, 12, 13, 14, 15, 16,
+                19, 20, 21, 22, 23, 24, 25,
+                28, 29, 30, 31, 32, 33, 34,
+                37, 38, 39, 40, 41, 42, 43
+        );
+
+        for (int i = start; i < end && i - start < slotsValidos.size(); i++) {
             Titulo titulo = todos.get(i);
             ItemStack item = new ItemStack(Material.NAME_TAG);
             ItemMeta meta = item.getItemMeta();
@@ -59,14 +65,10 @@ public class TituloLojaMenu {
                 meta.setLore(lore);
                 item.setItemMeta(meta);
             }
-            // começa no slot 10 (primeira linha útil dentro da moldura)
-            inv.setItem(10 + (i - start), item);
+            inv.setItem(slotsValidos.get(i - start), item);
         }
 
         // Botões de navegação
-        // Calcula total de páginas (mínimo 1)
-        int totalPaginas = Math.max(1, (int) Math.ceil((double) todos.size() / ITEMS_PER_PAGE));
-
         inv.setItem(48, criarBotao(Material.ARROW, "§ePágina anterior"));
         inv.setItem(50, criarBotao(Material.ARROW, "§ePróxima página"));
 

@@ -18,7 +18,7 @@ ajuda:
   texto: "&ePrecisa de ajuda? &aClique aqui &epara chamar um ajudante."
   hover: "&7Clique na mensagem para solicitar ajuda"
   comando: "/magnatas ajuda solicitar"
-  intervalo: 300 # tempo em segundos entre cada mensagem automática
+  intervalo: 300
   msg_interativa_texto: "&ePrecisa de ajuda? &aClique aqui &epara chamar um ajudante."
   msg_interativa_hover: "&7Clique para solicitar ajuda"
   msg_interativa_comando: "/magnatas ajuda solicitar"
@@ -61,11 +61,22 @@ titulos:
   subcomando_invalido: "&cSubcomando inválido. Use /magnatas títulos, info, equipar ou remover."
   apenas_jogadores: "&cApenas jogadores podem usar este comando."
 
+  tempo_estendido: "&aTempo do título %1 foi estendido com sucesso!"
+  compra_sucesso: "&aVocê comprou o título %1 com sucesso!"
+  ja_possui: "&cVocê já possui esse título."
+  sem_saldo: "&cVocê não tem tokens suficientes para comprar este título."
+
   info:
     cabecalho: "&e=== Informações do Título ==="
     nome: "&6Nome: %1"
     descricao: "&7Descrição: %1"
     obtencao: "&bObtenção: %1"
     duracao_permanente: "&aDuração: Permanente"
-    duracao_formatada: "&cDuração: %1"
+    duracao_formatada: "&fDuração: %1"
     expira_em: "&cExpira em: %1"
+    restante_formatado: "&eTempo restante: %1"
+    expirando_em_breve: "&c[Expira em breve]"
+
+  log:
+    compra: "%1 comprou o título %2 por %3 tokens."
+    extensao: "%1 estendeu o tempo do título %2."

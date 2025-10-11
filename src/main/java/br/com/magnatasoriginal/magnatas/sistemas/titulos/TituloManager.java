@@ -124,10 +124,10 @@ public class TituloManager {
         return Collections.unmodifiableSet(titulosPorJogador.keySet());
     }
 
-    public void darTitulo(UUID uuid, String tituloNome) {
+    public void darTitulo(UUID uuid, String tituloNome, long adquiridoEm) {
         final String nomeFinal = tituloNome.toLowerCase();
         titulosPorJogador.computeIfAbsent(uuid, k -> ConcurrentHashMap.newKeySet()).add(nomeFinal);
-        salvarTituloDoJogador(uuid, nomeFinal);
+        salvarTituloDoJogador(uuid, nomeFinal, adquiridoEm);
     }
 
     public void removerTitulo(UUID uuid, String tituloNome) {
@@ -162,12 +162,22 @@ public class TituloManager {
     // ---------------------------
     // Expiração
     // ---------------------------
+    public boolean isExpirado(UUID uuid, Titulo titulo) {
+        if (titulo.isPermanente()) return false;
+
+        long adquiridoEm = getDataAquisicao(uuid, titulo.getNome());
+        if (adquiridoEm <= 0) return false;
+
+        long expiraEm = adquiridoEm + titulo.getDuracaoMillis();
+        return System.currentTimeMillis() > expiraEm;
+    }
+
     private void iniciarVerificadorExpiracao() {
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             for (UUID uuid : new HashSet<>(titulosPorJogador.keySet())) {
                 titulosPorJogador.get(uuid).removeIf(nome -> {
                     Optional<Titulo> t = getTituloPorNome(nome);
-                    return t.map(Titulo::isExpirado).orElse(false);
+                    return t.map(titulo -> isExpirado(uuid, titulo)).orElse(false);
                 });
             }
         }, 20L * 60, 20L * 60); // a cada 1 minuto
@@ -180,10 +190,8 @@ public class TituloManager {
             Optional<Titulo> opt = getTituloPorNome(nome);
             if (opt.isPresent()) {
                 Titulo titulo = opt.get();
-                if (titulo.isExpirado()) {
+                if (isExpirado(uuid, titulo)) {
                     removerTitulo(uuid, nome);
-
-                    // Se o jogador tinha esse título equipado, remove também
                     getTituloEquipado(uuid).ifPresent(equipado -> {
                         if (equipado.equalsIgnoreCase(nome)) {
                             removerTituloEquipado(uuid);
@@ -205,7 +213,7 @@ public class TituloManager {
                     "descricao TEXT, " +
                     "expira_em INTEGER)");
             stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulos (" +
-                    "uuid TEXT, titulo_nome TEXT, PRIMARY KEY(uuid, titulo_nome))");
+                    "uuid TEXT, titulo_nome TEXT, adquirido_em INTEGER, PRIMARY KEY(uuid, titulo_nome))");
             stmt.execute("CREATE TABLE IF NOT EXISTS jogador_titulo_equipado (" +
                     "uuid TEXT PRIMARY KEY, titulo_nome TEXT)");
         } catch (SQLException e) {
@@ -285,12 +293,14 @@ public class TituloManager {
         }
     }
 
-    private void salvarTituloDoJogador(UUID uuid, String tituloNome) {
+    private void salvarTituloDoJogador(UUID uuid, String tituloNome, long adquiridoEm) {
         try (Connection conn = db.openConnection();
              PreparedStatement ps = conn.prepareStatement(
-                     "INSERT OR IGNORE INTO jogador_titulos (uuid, titulo_nome) VALUES (?, ?)")) {
+                     "INSERT OR REPLACE INTO jogador_titulos (uuid, titulo_nome, adquirido_em) VALUES (?, ?, ?)"
+             )) {
             ps.setString(1, uuid.toString());
             ps.setString(2, tituloNome);
+            ps.setLong(3, adquiridoEm);
             ps.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Erro ao salvar título do jogador", e);
@@ -306,6 +316,38 @@ public class TituloManager {
             ps.executeUpdate();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.WARNING, "Erro ao remover título do jogador", e);
+        }
+    }
+
+    public long getDataAquisicao(UUID uuid, String tituloNome) {
+        try (Connection conn = db.openConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT adquirido_em FROM jogador_titulos WHERE uuid = ? AND titulo_nome = ?"
+             )) {
+            ps.setString(1, uuid.toString());
+            ps.setString(2, tituloNome);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getLong("adquirido_em");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.WARNING, "Erro ao obter data de aquisição", e);
+        }
+        return 0L;
+    }
+
+    public void atualizarDataAquisicao(UUID uuid, String tituloNome, long novoTimestamp) {
+        try (Connection conn = db.openConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE jogador_titulos SET adquirido_em = ? WHERE uuid = ? AND titulo_nome = ?"
+             )) {
+            ps.setLong(1, novoTimestamp);
+            ps.setString(2, uuid.toString());
+            ps.setString(3, tituloNome.toLowerCase());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            plugin.getLogger().warning("Erro ao atualizar data de aquisição do título: " + tituloNome);
         }
     }
 
